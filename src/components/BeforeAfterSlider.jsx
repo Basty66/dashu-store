@@ -32,16 +32,12 @@ export default function BeforeAfterSlider() {
       <div className="absolute inset-0" onMouseDown={down} onTouchStart={down} />
       <div className="absolute top-0 bottom-0" style={{ left: `${pos}%` }}>
         <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/90 shadow-lg" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-11 h-11 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center">
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.5" strokeLinecap="round"><polyline points="9 18 3 12 9 6" /><polyline points="15 18 21 12 15 6" /></svg>
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.5" strokeLinecap="round"><polyline points="9 18 3 12 9 6" /><polyline points="15 18 21 12 15 6" /></svg>
         </div>
       </div>
-      <div className="absolute bottom-4 left-4 bg-white/70 backdrop-blur-sm px-3 py-1.5 text-[11px] font-medium text-navy/70 tracking-wide uppercase">
-        Antes
-      </div>
-      <div className="absolute bottom-4 right-4 bg-white/70 backdrop-blur-sm px-3 py-1.5 text-[11px] font-medium text-navy/70 tracking-wide uppercase">
-        Después
-      </div>
+      <div className="absolute bottom-3 left-3 bg-white/60 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-navy/60 tracking-wide uppercase">Antes</div>
+      <div className="absolute bottom-3 right-3 bg-white/60 backdrop-blur-sm px-3 py-1 text-[11px] font-medium text-navy/60 tracking-wide uppercase">Después</div>
     </div>
   )
 }

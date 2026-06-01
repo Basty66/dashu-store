@@ -19,15 +19,12 @@ export default function OrderTracking() {
   const fetchOrder = async (num) => {
     if (!num) return
     setLoading(true); setError('')
-    try {
-      setOrder(await api.orders.get(num))
-    } catch {
-      setError('Orden no encontrada'); setOrder(null)
-    } finally { setLoading(false) }
+    try { setOrder(await api.orders.get(num)) }
+    catch { setError('Orden no encontrada'); setOrder(null) }
+    finally { setLoading(false) }
   }
 
   useEffect(() => { if (orderNumber) fetchOrder(orderNumber) }, [orderNumber])
-
   const handleSearch = (e) => { e.preventDefault(); fetchOrder(search.trim().toUpperCase()) }
 
   return (
@@ -39,10 +36,8 @@ export default function OrderTracking() {
         </div>
 
         <form onSubmit={handleSearch} className="flex gap-3 max-w-sm mx-auto mb-12">
-          <input
-            type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-            placeholder="#DSH-00000" className="input text-center font-medium tracking-wide"
-          />
+          <input type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+            placeholder="#DSH-00000" className="input text-center font-medium tracking-wide" />
           <button type="submit" className="btn-primary px-6 shrink-0" disabled={loading}>
             {loading ? (
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="32" strokeLinecap="round"/></svg>
@@ -52,50 +47,41 @@ export default function OrderTracking() {
 
         {error && (
           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1" className="mx-auto mb-4">
-              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" />
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1" className="mx-auto mb-4">
+              <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
             </svg>
-            <p className="text-sm text-stone mb-4">{error}</p>
-            <p className="text-xs text-stone/60">Verifica el número e intenta nuevamente</p>
+            <p className="text-sm text-stone mb-3">{error}</p>
+            <p className="text-xs text-stone/50">Verifica el número e intenta nuevamente</p>
           </motion.div>
         )}
 
         {order && (
           <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-            {/* Timeline */}
-            <div className="glass-card p-6 lg:p-8">
+            <div className="glass-card-strong p-6 lg:p-8">
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h2 className="font-display font-semibold text-lg text-navy">{order.order_number}</h2>
                   <p className="text-xs text-stone mt-1">
-                    {new Date(order.created_at).toLocaleDateString('es-CL', {
-                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
-                    })}
+                    {new Date(order.created_at).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
                   </p>
                 </div>
                 <span className={`px-3 py-1 text-[11px] font-medium uppercase tracking-wider ${
                   order.status === 'delivered' ? 'bg-navy text-white' :
                   order.status === 'dispatched' || order.status === 'transit' ? 'bg-gold text-white' :
-                  'bg-ivory text-stone'
-                }`}>
-                  {statusLabels[order.status] || order.status}
-                </span>
+                  'bg-white/60 backdrop-blur-sm text-stone border border-navy/5'
+                }`}>{statusLabels[order.status] || order.status}</span>
               </div>
               <OrderTimeline status={order.status} />
             </div>
 
-            {/* Details */}
-            <div className="glass-card p-6 lg:p-8">
+            <div className="glass-card-strong p-6 lg:p-8">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Envío</h3>
                   <p className="text-sm font-medium text-navy">{order.customer_name}</p>
                   <p className="text-xs text-stone">{order.customer_email}</p>
                   <div className="divider my-3" />
-                  <p className="text-xs text-stone leading-relaxed">
-                    {order.shipping_address}<br />
-                    {order.shipping_city}, {order.shipping_region}
-                  </p>
+                  <p className="text-xs text-stone leading-relaxed">{order.shipping_address}<br />{order.shipping_city}, {order.shipping_region}</p>
                 </div>
                 <div>
                   <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Productos</h3>
@@ -113,10 +99,9 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            {/* Starken simulation */}
-            <div className="glass-card p-6 flex items-center gap-4">
-              <div className="w-10 h-10 bg-ivory flex items-center justify-center flex-shrink-0">
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+            <div className="glass-card-strong p-5 flex items-center gap-4">
+              <div className="w-9 h-9 bg-ivory flex items-center justify-center flex-shrink-0">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
               </div>
               <div>
                 <p className="text-xs font-medium text-navy">Despachado por Starken</p>
@@ -124,7 +109,7 @@ export default function OrderTracking() {
               </div>
             </div>
 
-            <div className="text-center pt-4">
+            <div className="text-center pt-2">
               <Link to="/" className="text-xs text-stone hover:text-navy transition-colors underline underline-offset-4">Volver al inicio</Link>
             </div>
           </motion.div>
