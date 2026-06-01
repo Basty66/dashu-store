@@ -85,7 +85,12 @@ export default function Admin() {
 
   return (
     <div className="min-h-screen pt-24 pb-20 bg-cream" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="max-w-6xl mx-auto px-6 lg:px-10">
+      <div className="orb-layer">
+        <div className="orb orb-1 animate-orb-drift" />
+        <div className="orb orb-2 animate-orb-reverse" />
+        <div className="orb orb-3 animate-orb-drift" style={{ animationDuration: '35s' }} />
+      </div>
+      <div className="max-w-6xl mx-auto px-6 lg:px-10 relative">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight">Dashboard</h1>
