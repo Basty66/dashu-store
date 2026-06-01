@@ -1,62 +1,61 @@
-const statusMap = {
-  pending: 0,
-  paid: 1,
-  preparing: 1,
-  dispatched: 2,
-  transit: 3,
-  delivered: 4,
-}
+const statusMap = { pending: 0, paid: 1, preparing: 2, dispatched: 3, transit: 4, delivered: 5 }
 
 const steps = [
-  { label: 'Pedido Recibido', icon: 'inventory_2' },
-  { label: 'En Preparación', icon: 'inventory' },
-  { label: 'Despachado', icon: 'local_shipping' },
-  { label: 'En Camino', icon: 'location_on' },
-  { label: 'Entregado', icon: 'check_circle' },
+  { label: 'Recibido', sub: 'Pedido confirmado', icon: 'inbox' },
+  { label: 'Preparación', sub: 'Empacando tu pedido', icon: 'package' },
+  { label: 'Despachado', sub: 'En manos del courier', icon: 'truck' },
+  { label: 'En Tránsito', sub: 'Rumbo a tu domicilio', icon: 'map-pin' },
+  { label: 'Entregado', sub: '¡Recibido con éxito!', icon: 'check-circle' },
 ]
 
 export default function OrderTimeline({ status, trackingNumber }) {
-  const currentStep = statusMap[status] ?? 0
+  const current = statusMap[status] ?? 0
 
   return (
-    <div className="w-full max-w-2xl mx-auto">
-      <div className="relative flex items-start justify-between">
+    <div className="w-full">
+      <div className="relative">
         {steps.map((step, i) => {
-          const isCompleted = i <= currentStep
-          const isActive = i === currentStep && status !== 'delivered'
+          const done = i < current
+          const active = i === current
 
           return (
-            <div key={i} className="flex flex-col items-center relative z-10" style={{ flex: '1' }}>
-              <div
-                className={`w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                  isActive
-                    ? 'bg-navy text-white scale-110 shadow-lg'
-                    : isCompleted
-                    ? 'bg-navy text-white'
-                    : 'bg-gray-200 text-gray-400'
-                }`}
-              >
-                <span className="material-symbols-outlined text-sm">{step.icon}</span>
+            <div key={i} className="flex gap-5 pb-8 last:pb-0 relative">
+              <div className="flex flex-col items-center">
+                <div
+                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
+                    done
+                      ? 'bg-charcoal text-white'
+                      : active
+                      ? 'bg-charcoal text-white ring-4 ring-charcoal/10'
+                      : 'bg-mist text-slate'
+                  }`}
+                >
+                  {done ? (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                      <circle cx="12" cy="12" r="10" />
+                    </svg>
+                  )}
+                </div>
+                {i < steps.length - 1 && (
+                  <div className={`w-0.5 flex-1 mt-1 ${done ? 'bg-charcoal' : 'bg-mist'}`} />
+                )}
               </div>
-              <p className={`text-xs mt-2 text-center font-medium ${
-                isCompleted ? 'text-navy' : 'text-gray-400'
-              }`}>
-                {step.label}
-              </p>
-              {trackingNumber && i === 2 && (
-                <p className="text-[10px] text-gray-400 mt-0.5">{trackingNumber}</p>
-              )}
+              <div className="pt-1.5">
+                <p className={`font-display font-semibold text-sm ${done || active ? 'text-charcoal' : 'text-slate'}`}>
+                  {step.label}
+                </p>
+                <p className="text-xs text-slate mt-0.5">{step.sub}</p>
+                {i === 2 && trackingNumber && (
+                  <p className="text-xs text-taupe mt-1 font-medium">N° Seguimiento: {trackingNumber}</p>
+                )}
+              </div>
             </div>
           )
         })}
-
-        <div className="absolute top-5 left-0 right-0 h-0.5 -translate-y-1/2 z-0">
-          <div
-            className="h-full bg-navy transition-all duration-500"
-            style={{ width: `${(currentStep / (steps.length - 1)) * 100}%` }}
-          />
-          <div className="h-full bg-gray-200" style={{ width: `${100 - (currentStep / (steps.length - 1)) * 100}%` }} />
-        </div>
       </div>
     </div>
   )

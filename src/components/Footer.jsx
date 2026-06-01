@@ -2,47 +2,66 @@ import { Link } from 'react-router-dom'
 
 export default function Footer() {
   return (
-    <footer className="bg-navy text-white/80 mt-20">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div>
-            <div className="flex items-center gap-1 mb-4">
-              <span className="font-display font-bold text-xl tracking-[4px] text-white">DASHU</span>
-              <span className="font-body text-[8px] tracking-[6px] text-white/60 mt-3">FOR MEN</span>
-            </div>
-            <p className="text-sm text-white/60 leading-relaxed">
-              Arquitectura para tu grooming. Productos diseñados para el hombre moderno.
+    <footer className="bg-charcoal text-white/60">
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-16 lg:py-20">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-10 lg:gap-16">
+          <div className="col-span-2 md:col-span-1">
+            <Link to="/" className="flex items-baseline gap-1.5 mb-5">
+              <span className="font-display font-bold text-lg tracking-[6px] text-white">DASHU</span>
+              <span className="font-body text-[7px] tracking-[8px] text-white/40 uppercase">For Men</span>
+            </Link>
+            <p className="text-sm leading-relaxed text-white/40 max-w-xs">
+              Arquitectura para tu grooming. Cuidado facial premium para el hombre moderno.
             </p>
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">Links</h4>
-            <div className="flex flex-col gap-2">
+            <h4 className="font-display font-semibold text-sm text-white/80 mb-5 uppercase tracking-wider">
+              Navegación
+            </h4>
+            <div className="flex flex-col gap-3">
               <Link to="/" className="text-sm hover:text-white transition-colors">Inicio</Link>
               <a href="/#producto" className="text-sm hover:text-white transition-colors">Producto</a>
               <a href="/#como-usar" className="text-sm hover:text-white transition-colors">Cómo Usar</a>
+              <Link to="/tracking" className="text-sm hover:text-white transition-colors">Tracking</Link>
             </div>
           </div>
 
           <div>
-            <h4 className="font-display font-semibold text-white mb-4">Contacto</h4>
-            <div className="flex flex-col gap-2 text-sm text-white/60">
+            <h4 className="font-display font-semibold text-sm text-white/80 mb-5 uppercase tracking-wider">
+              Legal
+            </h4>
+            <div className="flex flex-col gap-3">
+              <span className="text-sm text-white/40 cursor-not-allowed">Términos y Condiciones</span>
+              <span className="text-sm text-white/40 cursor-not-allowed">Política de Privacidad</span>
+              <span className="text-sm text-white/40 cursor-not-allowed">Devoluciones</span>
+            </div>
+          </div>
+
+          <div>
+            <h4 className="font-display font-semibold text-sm text-white/80 mb-5 uppercase tracking-wider">
+              Contacto
+            </h4>
+            <div className="flex flex-col gap-3 text-sm text-white/40">
               <span>hola@dashu.cl</span>
               <span>Santiago, Chile</span>
-              <div className="flex gap-3 mt-2">
-                <a href="#" className="hover:text-white transition-colors">
-                  <span className="material-symbols-outlined text-sm">instagram</span>
+              <div className="flex gap-4 mt-2">
+                <a href="#" className="hover:text-white transition-colors text-sm">
+                  IG
                 </a>
-                <a href="#" className="hover:text-white transition-colors">
-                  <span className="material-symbols-outlined text-sm">tiktok</span>
+                <a href="#" className="hover:text-white transition-colors text-sm">
+                  TK
                 </a>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="border-t border-white/10 mt-8 pt-8 text-center text-sm text-white/40">
-          &copy; {new Date().getFullYear()} DASHU FOR MEN. Todos los derechos reservados.
+        <div className="divider opacity-10 my-10" />
+
+        <div className="flex flex-col sm:flex-row justify-between items-center gap-4 text-xs text-white/30">
+          <p>&copy; {new Date().getFullYear()} DASHU FOR MEN. Todos los derechos reservados.</p>
+          <p>Diseñado con dedicación en Santiago, Chile</p>
         </div>
       </div>
     </footer>
