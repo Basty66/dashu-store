@@ -1,11 +1,12 @@
 import { useState, useEffect } from 'react'
-import { useParams } from 'react-router-dom'
+import { useParams, Link } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import OrderTimeline from '../components/OrderTimeline'
 import { api } from '../services/api'
 
 const statusLabels = {
   pending: 'Pendiente', paid: 'Pago Confirmado', preparing: 'En Preparación',
-  dispatched: 'Despachado', transit: 'En Camino', delivered: 'Entregado',
+  dispatched: 'En Camino', transit: 'En Tránsito', delivered: 'Entregado',
 }
 
 export default function OrderTracking() {
@@ -30,83 +31,103 @@ export default function OrderTracking() {
   const handleSearch = (e) => { e.preventDefault(); fetchOrder(search.trim().toUpperCase()) }
 
   return (
-    <div className="min-h-screen pt-28 pb-20 px-6 lg:px-10 bg-parchment">
-      <div className="max-w-2xl mx-auto">
-        <div className="text-center mb-12">
-          <h1 className="font-display font-bold text-3xl lg:text-4xl text-soot tracking-tight mb-3">Seguimiento</h1>
-          <p className="text-sm text-stone">Ingresa tu número de pedido para ver su estado</p>
+    <div className="min-h-screen pt-24 pb-20 bg-cream">
+      <div className="max-w-2xl mx-auto px-6 lg:px-10">
+        <div className="text-center mb-10">
+          <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight mb-2">Seguimiento</h1>
+          <p className="text-sm text-stone">Ingresa tu número de pedido DSH-XXXXX</p>
         </div>
 
-        <form onSubmit={handleSearch} className="flex gap-3 max-w-sm mx-auto mb-16">
+        <form onSubmit={handleSearch} className="flex gap-3 max-w-sm mx-auto mb-12">
           <input
             type="text" value={search} onChange={(e) => setSearch(e.target.value)}
             placeholder="#DSH-00000" className="input text-center font-medium tracking-wide"
           />
-          <button type="submit" className="btn-primary px-6" disabled={loading}>
+          <button type="submit" className="btn-primary px-6 shrink-0" disabled={loading}>
             {loading ? (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="32" strokeLinecap="round"/></svg>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="32" strokeLinecap="round"/></svg>
             ) : 'Buscar'}
           </button>
         </form>
 
         {error && (
-          <div className="text-center py-16">
-            <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1" className="mx-auto mb-4">
+          <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="text-center py-16">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1" className="mx-auto mb-4">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" /><line x1="8" y1="11" x2="14" y2="11" />
             </svg>
-            <p className="text-sm text-stone">{error}</p>
-          </div>
+            <p className="text-sm text-stone mb-4">{error}</p>
+            <p className="text-xs text-stone/60">Verifica el número e intenta nuevamente</p>
+          </motion.div>
         )}
 
         {order && (
-          <div className="space-y-6 animate-enter">
-            <div className="card p-8 lg:p-10">
-              <div className="flex items-start justify-between mb-8">
+          <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
+            {/* Timeline */}
+            <div className="glass-card p-6 lg:p-8">
+              <div className="flex items-start justify-between mb-6">
                 <div>
-                  <div className="flex items-center gap-4 mb-2">
-                    <h2 className="font-display font-semibold text-xl text-soot">{order.order_number}</h2>
-                    <span className={`px-3 py-1 text-[11px] font-medium uppercase tracking-wider ${
-                      order.status === 'delivered' ? 'bg-soot text-parchment' :
-                      order.status === 'dispatched' || order.status === 'transit' ? 'bg-clay text-parchment' :
-                      'bg-linen text-stone'
-                    }`}>
-                      {statusLabels[order.status] || order.status}
-                    </span>
-                  </div>
-                  <p className="text-sm text-stone">
+                  <h2 className="font-display font-semibold text-lg text-navy">{order.order_number}</h2>
+                  <p className="text-xs text-stone mt-1">
                     {new Date(order.created_at).toLocaleDateString('es-CL', {
-                      year: 'numeric', month: 'long', day: 'numeric'
+                      year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit'
                     })}
                   </p>
                 </div>
+                <span className={`px-3 py-1 text-[11px] font-medium uppercase tracking-wider ${
+                  order.status === 'delivered' ? 'bg-navy text-white' :
+                  order.status === 'dispatched' || order.status === 'transit' ? 'bg-gold text-white' :
+                  'bg-ivory text-stone'
+                }`}>
+                  {statusLabels[order.status] || order.status}
+                </span>
               </div>
-              <OrderTimeline status={order.status} trackingNumber={order.tracking_number} />
+              <OrderTimeline status={order.status} />
             </div>
 
-            <div className="card p-8 lg:p-10">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+            {/* Details */}
+            <div className="glass-card p-6 lg:p-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
-                  <h3 className="text-xs font-medium text-stone uppercase tracking-wider mb-3">Envío</h3>
-                  <p className="text-sm font-medium text-soot">{order.customer_name}</p>
-                  <p className="text-sm text-stone">{order.customer_email}</p>
-                  <p className="text-sm text-stone mt-3">{order.shipping_address}<br />{order.shipping_city}, {order.shipping_region}</p>
+                  <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Envío</h3>
+                  <p className="text-sm font-medium text-navy">{order.customer_name}</p>
+                  <p className="text-xs text-stone">{order.customer_email}</p>
+                  <div className="divider my-3" />
+                  <p className="text-xs text-stone leading-relaxed">
+                    {order.shipping_address}<br />
+                    {order.shipping_city}, {order.shipping_region}
+                  </p>
                 </div>
                 <div>
-                  <h3 className="text-xs font-medium text-stone uppercase tracking-wider mb-3">Productos</h3>
+                  <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Productos</h3>
                   {order.items?.map(item => (
                     <div key={item.id} className="flex justify-between text-sm mb-2">
-                      <span className="text-soot">{item.product_name || item.product_id} × {item.quantity}</span>
+                      <span className="text-navy">{item.product_name || `Producto #${item.product_id}`} × {item.quantity}</span>
                       <span className="text-stone">${(item.unit_price * item.quantity).toLocaleString('es-CL')}</span>
                     </div>
                   ))}
-                  <div className="divider my-4" />
-                  <div className="flex justify-between font-display font-semibold text-base text-soot">
+                  <div className="divider my-3" />
+                  <div className="flex justify-between font-display font-semibold text-base text-navy">
                     <span>Total</span><span>${order.total.toLocaleString('es-CL')}</span>
                   </div>
                 </div>
               </div>
             </div>
-          </div>
+
+            {/* Starken simulation */}
+            <div className="glass-card p-6 flex items-center gap-4">
+              <div className="w-10 h-10 bg-ivory flex items-center justify-center flex-shrink-0">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+              </div>
+              <div>
+                <p className="text-xs font-medium text-navy">Despachado por Starken</p>
+                <p className="text-[11px] text-stone mt-0.5">N° seguimiento: <span className="font-medium text-navy">{order.tracking_number || 'Pendiente'}</span></p>
+              </div>
+            </div>
+
+            <div className="text-center pt-4">
+              <Link to="/" className="text-xs text-stone hover:text-navy transition-colors underline underline-offset-4">Volver al inicio</Link>
+            </div>
+          </motion.div>
         )}
       </div>
     </div>

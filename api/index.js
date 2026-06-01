@@ -6,8 +6,8 @@ app.use(express.json())
 const memStore = {
   products: [{
     id: 1, name: 'Protein Down Cream 120ml', slug: 'protein-down-cream-120ml',
-    description: 'Crema hidratante con proteínas para el cuidado facial masculino.',
-    price: 24990, stock: 100, sku: 'DPC-120',
+    description: 'Crema alisadora coreana para el cabello masculino. Alisa, nutre y controla el frizz con proteínas de rápida absorción. Sin químicos agresivos.',
+    price: 24990, stock: 42, sku: 'DPC-120',
     image_url: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx7tL40DbjW5GvbgDJVMNpu2XYaVj5IBcX5JzmK4ndbMaC4tDyw1e_H2kkskVH3X37AAHHqnc6oN1fAXiPsR2Ydi84PWaMqoEn1sUNYqiucVCEpC6K2dA4JcWh2LsTvnttWKw6lxKtDHr2s854Wog4RXDw6H1waPc6Dacdn6-PKR83TTzFocY5xxHkkOVWzY-RrQvtGpSB_cQbdsMBgIYDodlQWq-b7sU8U9ygamoLCnPuFKnDFI6-JHLsMkWjPxEZrKAkD6-MHaA',
     is_active: true, created_at: new Date().toISOString(),
   }],
@@ -21,6 +21,11 @@ const orderNumber = () => {
   return `DSH-${String(orderCounter).padStart(5, '0')}`
 }
 
+const trackingNumber = () => {
+  const n = Math.floor(100000 + Math.random() * 900000)
+  return `STK-${n}`
+}
+
 app.get('/api/products', (req, res) => {
   res.json(memStore.products.filter(p => p.is_active))
 })
@@ -32,13 +37,14 @@ app.get('/api/products/:id', (req, res) => {
 })
 
 app.post('/api/orders', (req, res) => {
-  const { name, email, phone, region, city, address, items, total } = req.body
+  const { name, email, phone, region, commune, address, items, total } = req.body
   const num = orderNumber()
   const order = {
     id: memStore.nextOrderId++, order_number: num, customer_name: name,
     customer_email: email, customer_phone: phone, shipping_region: region,
-    shipping_city: city, shipping_address: address, total, status: 'pending',
-    payment_method: 'webpay', created_at: new Date().toISOString(),
+    shipping_city: commune, shipping_address: address, total, status: 'paid',
+    payment_method: req.body.paymentMethod || 'webpay', tracking_number: trackingNumber(),
+    created_at: new Date().toISOString(),
   }
   memStore.orders.push(order)
   ;(items || []).forEach(i => {
@@ -84,7 +90,6 @@ app.post('/api/webpay/commit', async (req, res) => {
       Environment.Integration,
     ))
     const response = await tx.commit(token)
-
     if (response.status === 'AUTHORIZED') {
       const order = memStore.orders.find(o => o.order_number === response.buy_order)
       if (order) {
@@ -97,17 +102,11 @@ app.post('/api/webpay/commit', async (req, res) => {
         }
       }
     }
-
     res.json({
-      status: response.status,
-      buyOrder: response.buy_order,
-      amount: response.amount,
-      accountingDate: response.accounting_date,
-      transactionDate: response.transaction_date,
-      authorizationCode: response.authorization_code,
-      paymentTypeCode: response.payment_type_code,
-      installmentsNumber: response.installments_number,
-      installmentsAmount: response.installments_amount,
+      status: response.status, buyOrder: response.buy_order, amount: response.amount,
+      accountingDate: response.accounting_date, transactionDate: response.transaction_date,
+      authorizationCode: response.authorization_code, paymentTypeCode: response.payment_type_code,
+      installmentsNumber: response.installments_number, installmentsAmount: response.installments_amount,
     })
   } catch (err) {
     console.error('Webpay commit error:', err.message)
@@ -118,7 +117,6 @@ app.post('/api/webpay/commit', async (req, res) => {
 app.all('/api/webpay/return', async (req, res) => {
   const token = req.body?.token_ws || req.query?.token_ws
   if (!token) return res.redirect('/checkout?error=missing_token')
-
   try {
     const host = req.get('host')
     const proto = req.headers['x-forwarded-proto'] || req.protocol
@@ -129,8 +127,24 @@ app.all('/api/webpay/return', async (req, res) => {
     })
     const data = await commitRes.json()
     res.redirect(data.status === 'AUTHORIZED' ? `/order/${data.buyOrder}` : `/checkout?error=declined&order=${data.buyOrder}`)
-  } catch {
-    res.redirect('/checkout?error=commit_failed')
+  } catch { res.redirect('/checkout?error=commit_failed') }
+})
+
+app.post('/api/mercadopago/create', async (req, res) => {
+  try {
+    const { orderNumber, amount } = req.body
+    const host = req.get('host')
+    const proto = req.headers['x-forwarded-proto'] || req.protocol
+    res.json({
+      status: 'simulated',
+      orderNumber,
+      amount,
+      redirect_url: `${proto}://${host}/order/${orderNumber}`,
+      message: 'Mercado Pago simulated payment — order confirmed',
+    })
+  } catch (err) {
+    console.error('Mercado Pago error:', err.message)
+    res.status(500).json({ error: 'Error al procesar Mercado Pago' })
   }
 })
 

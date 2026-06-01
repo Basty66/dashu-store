@@ -24,5 +24,6 @@ export const api = {
   payments: {
     webpayCreate: (data) => request('/webpay/create', { method: 'POST', body: JSON.stringify(data) }),
     webpayCommit: (token) => request('/webpay/commit', { method: 'POST', body: JSON.stringify({ token }) }),
+    mercadopagoCreate: (data) => request('/mercadopago/create', { method: 'POST', body: JSON.stringify(data) }),
   },
 }
