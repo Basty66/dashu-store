@@ -1,204 +1,180 @@
-import { useState, useEffect, useRef } from 'react'
-import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
-import { useCart } from '../context/CartContext'
-
-let nextId = 5
-const initialProducts = [
-  { id: 1, name: 'Protein Down Cream 120ml', sku: 'DPC-120', stock: 42, status: 'Óptimo', price: 24990 },
-  { id: 2, name: 'Protein Down Cream 60ml', sku: 'DPC-060', stock: 8, status: 'Bajo', price: 15990 },
-  { id: 3, name: 'Protein Down Serum 30ml', sku: 'SER-030', stock: 15, status: 'Óptimo', price: 18990 },
-  { id: 4, name: 'Kit Dúo Crema + Serum', sku: 'KIT-001', stock: 3, status: 'Crítico', price: 37990 },
-]
-
-const statusStyles = {
-  'Óptimo': 'bg-navy/10 text-navy', 'Bajo': 'bg-gold/15 text-gold', 'Crítico': 'bg-red-50 text-red-700',
-}
-
-function AnimatedCounter({ value, suffix = '' }) {
-  const count = useMotionValue(0)
-  const rounded = useTransform(count, (v) => Math.round(v))
-  const spring = useSpring(count, { damping: 25, stiffness: 200 })
-
-  useEffect(() => { spring.set(value) }, [value, spring])
-
-  return (
-    <span className="font-display font-bold text-xl text-navy">
-      <motion.span>{rounded}</motion.span>
-      {suffix && <span className="text-xs font-normal text-stone ml-0.5">{suffix}</span>}
-    </span>
-  )
-}
+import { useState, useEffect } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 
 export default function Admin() {
-  const { items: cartItems } = useCart()
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [loggedIn, setLoggedIn] = useState(false)
-  const [products, setProducts] = useState(initialProducts)
-  const [showForm, setShowForm] = useState(false)
-  const [newProduct, setNewProduct] = useState({ name: '', sku: '', stock: 0, price: 0 })
-  const [floatingOpen, setFloatingOpen] = useState(false)
-  const fabRef = useRef(null)
+  const [orders, setOrders] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [filter, setFilter] = useState('all')
+  const [selected, setSelected] = useState(null)
 
   useEffect(() => {
-    if (!floatingOpen) return
-    const handler = (e) => { if (fabRef.current && !fabRef.current.contains(e.target)) setFloatingOpen(false) }
-    document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
-  }, [floatingOpen])
+    const load = async () => {
+      try {
+        const r = await fetch('/api/admin/orders')
+        setOrders(await r.json())
+      } catch {} finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [])
 
-  const addProduct = (e) => {
-    e.preventDefault()
-    if (!newProduct.name) return
-    setProducts(prev => [...prev, { ...newProduct, id: nextId++, status: newProduct.stock > 10 ? 'Óptimo' : newProduct.stock > 0 ? 'Bajo' : 'Crítico' }])
-    setNewProduct({ name: '', sku: '', stock: 0, price: 0 }); setShowForm(false)
+  const updateStatus = async (id, status) => {
+    try {
+      await fetch(`/api/orders/${id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      })
+      setOrders(orders.map(o => o.id === id ? { ...o, status } : o))
+    } catch {}
   }
 
-  const toggleStock = (id) => setProducts(prev => prev.map(p => p.id === id ? { ...p, stock: p.stock > 0 ? 0 : 42 } : p))
-
-  const stats = { totalStock: products.reduce((s, p) => s + p.stock, 0), totalSales: 1249500, orders: 47 }
-
-  if (!loggedIn) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6 bg-cream">
-        <div className="glass p-8 w-full max-w-sm">
-          <div className="text-center mb-6">
-            <p className="font-display font-bold text-lg tracking-[6px] text-navy uppercase mb-1">Dashu</p>
-            <p className="text-xs text-stone">Panel de Administración</p>
-          </div>
-          <form onSubmit={(e) => { e.preventDefault(); setLoggedIn(true) }} className="space-y-3">
-            <div className="floating-input-wrap">
-              <input type="email" placeholder="" value={email} onChange={(e) => setEmail(e.target.value)} />
-              <label>admin@dashu.cl</label>
-            </div>
-            <div className="floating-input-wrap">
-              <input type="password" placeholder="" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <label>Contraseña</label>
-            </div>
-            <motion.button type="submit" className="btn-primary w-full justify-center"
-              whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>Ingresar</motion.button>
-          </form>
-        </div>
-      </div>
-    )
-  }
+  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const stats = [
+    { label: 'Total Pedidos', value: orders.length, color: '#0F2038' },
+    { label: 'Pendientes', value: orders.filter(o => o.status === 'Pendiente').length, color: '#755841' },
+    { label: 'En tránsito', value: orders.filter(o => o.status === 'En tránsito').length, color: '#755841' },
+    { label: 'Entregados', value: orders.filter(o => o.status === 'Entregado').length, color: '#755841' },
+  ]
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-cream" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="orb-layer">
-        <div className="orb orb-1 animate-orb-drift" />
-        <div className="orb orb-2 animate-orb-reverse" />
-        <div className="orb orb-3 animate-orb-drift" style={{ animationDuration: '35s' }} />
-      </div>
-      <div className="max-w-6xl mx-auto px-6 lg:px-10 relative">
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight">Dashboard</h1>
-            <p className="text-xs text-stone mt-1">Panel de control</p>
-          </div>
-          <button onClick={() => setLoggedIn(false)} className="text-xs text-stone hover:text-navy transition-colors uppercase tracking-wider relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-stone after:transition-all after:duration-300 hover:after:w-full">Salir</button>
+    <div className="min-h-screen pt-20 pb-16" style={{ background: '#fff8f5' }}>
+      <div className="max-w-[1280px] mx-auto px-6 md:px-20">
+        <div className="text-center mb-10">
+          <span className="label text-xs" style={{ color: '#755841' }}>Admin</span>
+          <h1 className="h-lg text-3xl mt-2" style={{ color: '#0F2038' }}>Dashboard</h1>
         </div>
 
-        {/* Stats cards */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {[
-            { label: 'Stock Total', value: stats.totalStock, suffix: 'unid.' },
-            { label: 'Ventas del Mes', value: stats.totalSales, suffix: '', prefix: '$' },
-            { label: 'Órdenes', value: stats.orders, suffix: '' },
-            { label: 'Carritos', value: cartItems.length, suffix: 'items' },
-          ].map((card, i) => (
-            <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="glass p-5">
-              <p className="text-[11px] text-stone uppercase tracking-wider mb-1">{card.label}</p>
-              {card.prefix && <span className="font-display font-bold text-xl text-navy">{card.prefix}</span>}
-              {card.value && <AnimatedCounter value={card.value} suffix={card.suffix} />}
+        {/* STATS */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-10">
+          {stats.map((s, i) => (
+            <motion.div key={s.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }}
+              className="glass p-5 rounded text-center">
+              <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="display-sm" style={{ color: s.color }}>
+                {String(s.value).padStart(2, '0')}
+              </motion.p>
+              <p className="text-xs mt-1" style={{ color: '#44474d' }}>{s.label}</p>
             </motion.div>
           ))}
         </div>
 
-        {/* Inventory table */}
-        <div className="glass overflow-hidden">
-          <div className="flex items-center justify-between px-6 py-5 border-b border-navy/[0.03]">
-            <h2 className="font-semibold text-xs tracking-wider uppercase text-navy/70">Inventario</h2>
-            <button onClick={() => setShowForm(!showForm)} className="text-xs text-navy hover:text-gold transition-colors font-medium uppercase tracking-wider">
-              {showForm ? 'Cancelar' : '+ Agregar'}
+        {/* FILTERS */}
+        <div className="flex flex-wrap gap-2 mb-6">
+          {['all', 'Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado'].map(s => (
+            <button key={s} onClick={() => setFilter(s)}
+              className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ${
+                filter === s ? 'bg-navy text-white' : 'text-stone hover:text-navy'
+              }`}>
+              {s === 'all' ? 'Todos' : s}
             </button>
-          </div>
+          ))}
+        </div>
 
-          <AnimatePresence>
-            {showForm && (
-              <motion.form initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
-                onSubmit={addProduct} className="px-6 py-4 border-b border-navy/[0.03] bg-cream/50 overflow-hidden">
-                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                  <input placeholder="Nombre" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} className="input text-xs" />
-                  <input placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct(p => ({ ...p, sku: e.target.value }))} className="input text-xs" />
-                  <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: Number(e.target.value) }))} className="input text-xs" />
-                  <input type="number" placeholder="Precio" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: Number(e.target.value) }))} className="input text-xs" />
-                  <motion.button type="submit" className="btn-primary justify-center text-xs"
-                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Guardar</motion.button>
-                </div>
-              </motion.form>
-            )}
-          </AnimatePresence>
-
+        {/* TABLE */}
+        <div className="glass rounded overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b border-navy/[0.02]">
-                  {['Producto', 'SKU', 'Precio', 'Stock', 'Estado', 'Acción'].map(h => (
-                    <th key={h} className="text-left py-3 px-4 text-[11px] text-stone font-medium uppercase tracking-wider">{h}</th>
+                <tr className="border-b border-outline-v/20">
+                  {['Pedido', 'Cliente', 'Total', 'Estado', 'Fecha', ''].map(h => (
+                    <th key={h} className="text-left px-4 py-3 text-xs font-medium" style={{ color: '#44474d' }}>{h}</th>
                   ))}
                 </tr>
               </thead>
               <tbody>
-                {products.map((p, i) => (
-                  <motion.tr key={p.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: i * 0.03 }}
-                    className="border-b border-navy/[0.02] hover:bg-navy/[0.02] transition-colors">
-                    <td className="py-3 px-4 font-medium text-navy text-sm">{p.name}</td>
-                    <td className="py-3 px-4 text-stone text-xs">{p.sku}</td>
-                    <td className="py-3 px-4 text-navy text-sm">${p.price.toLocaleString('es-CL')}</td>
-                    <td className="py-3 px-4"><span className={`text-sm font-medium ${p.stock === 0 ? 'text-red-500' : 'text-navy'}`}>{p.stock} unid.</span></td>
-                    <td className="py-3 px-4">
-                      <span className={`px-2.5 py-1 text-[11px] font-medium uppercase tracking-wider ${statusStyles[p.status] || 'bg-white/60 text-stone border border-navy/5'}`}>{p.status}</span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button onClick={() => toggleStock(p.id)}
-                        className="text-[11px] text-stone hover:text-navy font-medium transition-colors uppercase tracking-wider">
-                        {p.stock > 0 ? 'Agotar' : 'Restaurar'}
-                      </button>
-                    </td>
-                  </motion.tr>
-                ))}
+                {loading ? (
+                  <tr><td colSpan={6} className="text-center py-12 text-sm text-stone">Cargando...</td></tr>
+                ) : filtered.length === 0 ? (
+                  <tr><td colSpan={6} className="text-center py-12 text-sm text-stone">Sin pedidos</td></tr>
+                ) : (
+                  filtered.map(o => (
+                    <tr key={o.id || o.orderNumber} className="border-b border-outline-v/10 hover:bg-white/30 transition-colors cursor-pointer"
+                      onClick={() => setSelected(o)}>
+                      <td className="px-4 py-3 font-medium" style={{ color: '#0F2038' }}>{o.orderNumber}</td>
+                      <td className="px-4 py-3" style={{ color: '#44474d' }}>{o.shipping?.name || '—'}</td>
+                      <td className="px-4 py-3" style={{ color: '#0F2038' }}>${(o.total || 0).toLocaleString('es-CL')}</td>
+                      <td className="px-4 py-3">
+                        <span className="inline-block px-2 py-0.5 text-[11px] font-medium rounded-full"
+                          style={{ backgroundColor: 'rgba(15,32,56,0.08)', color: '#0F2038' }}>
+                          {o.status}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-xs" style={{ color: '#75777e' }}>
+                        {o.createdAt ? new Date(o.createdAt).toLocaleDateString('es-CL') : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <select value={o.status} onChange={e => updateStatus(o.id, e.target.value)}
+                          className="text-xs border border-outline-v/30 rounded px-2 py-1 bg-white/50"
+                          style={{ color: '#0F2038' }}>
+                          {['Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado'].map(s => (
+                            <option key={s} value={s}>{s}</option>
+                          ))}
+                        </select>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {/* Floating glass dashboard toggle */}
-      <div ref={fabRef} className="fixed bottom-6 right-6 z-40">
-        <AnimatePresence>
-          {floatingOpen && (
-            <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
-              className="glass-strong p-5 mb-3 min-w-[200px]">
-              <p className="text-[11px] text-stone uppercase tracking-wider mb-3">Resumen Rápido</p>
-              <div className="space-y-2">
-                <div className="flex justify-between text-xs"><span className="text-stone">Stock total</span><span className="font-medium text-navy">{stats.totalStock} unid.</span></div>
-                <div className="flex justify-between text-xs"><span className="text-stone">Órdenes</span><span className="font-medium text-navy">{stats.orders}</span></div>
-                <div className="flex justify-between text-xs"><span className="text-stone">Carritos</span><span className="font-medium text-navy">{cartItems.length} items</span></div>
+      {/* DETAIL MODAL */}
+      <AnimatePresence>
+        {selected && (
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.3)' }}
+            onClick={() => setSelected(null)}>
+            <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }}
+              className="glass p-8 rounded-xl max-w-lg w-full max-h-[80vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-start mb-6">
+                <div>
+                  <p className="text-xs" style={{ color: '#44474d' }}>Pedido</p>
+                  <p className="h-md text-navy">{selected.orderNumber}</p>
+                </div>
+                <motion.button onClick={() => setSelected(null)} className="p-1" whileHover={{ rotate: 90 }}>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#44474d" strokeWidth="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                </motion.button>
+              </div>
+
+              <div className="space-y-4">
+                <div className="glass p-4 rounded">
+                  <h4 className="h-sm text-navy text-sm mb-2">Cliente</h4>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{selected.shipping?.name}</p>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{selected.shipping?.email} · {selected.shipping?.phone}</p>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{selected.shipping?.address}, {selected.shipping?.city}, {selected.shipping?.region}</p>
+                </div>
+
+                <div className="glass p-4 rounded">
+                  <h4 className="h-sm text-navy text-sm mb-2">Productos</h4>
+                  {selected.items?.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm py-1">
+                      <span style={{ color: '#44474d' }}>{item.title} × {item.quantity}</span>
+                      <span style={{ color: '#0F2038' }}>${(item.price * item.quantity).toLocaleString('es-CL')}</span>
+                    </div>
+                  ))}
+                  <div className="border-t border-outline-v/20 mt-2 pt-2 flex justify-between font-medium">
+                    <span style={{ color: '#0F2038' }}>Total</span>
+                    <span style={{ color: '#0F2038' }}>${(selected.total || 0).toLocaleString('es-CL')}</span>
+                  </div>
+                </div>
+
+                <div className="glass p-4 rounded">
+                  <h4 className="h-sm text-navy text-sm mb-2">Estado</h4>
+                  <select value={selected.status} onChange={e => { updateStatus(selected.id, e.target.value); setSelected({ ...selected, status: e.target.value }) }}
+                    className="input-minimal w-full">
+                    {['Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                </div>
               </div>
             </motion.div>
-          )}
-        </AnimatePresence>
-        <motion.button onClick={() => setFloatingOpen(!floatingOpen)}
-          className="w-12 h-12 glass-strong flex items-center justify-center shadow-lg"
-          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2">
-            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
-            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
-          </svg>
-        </motion.button>
-      </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   )
 }

@@ -3,48 +3,61 @@ import { Link } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 
+const LogoSvg = () => (
+  <svg viewBox="0 0 300 60" className="h-7 w-auto" xmlns="http://www.w3.org/2000/svg">
+    <text x="0" y="45" fontFamily="Hanken Grotesk, sans-serif" fontWeight="900" fontSize="36" fill="#0F2038" letterSpacing="2">DASHU</text>
+    <text x="145" y="45" fontFamily="Hanken Grotesk, sans-serif" fontWeight="300" fontSize="20" fill="#0F2038" letterSpacing="1">FOR MEN</text>
+    <rect x="0" y="52" width="280" height="2" fill="#0F2038" />
+  </svg>
+)
+
 export default function Navbar() {
   const { totalItems, setIsOpen } = useCart()
-  const [visible, setVisible] = useState(false)
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
-  const [lastY, setLastY] = useState(0)
 
   useEffect(() => {
-    const onScroll = () => {
-      const y = window.scrollY
-      setScrolled(y > 20)
-      setVisible(y > 80 && y < lastY)
-      setLastY(y)
-    }
+    const onScroll = () => setScrolled(window.scrollY > 20)
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
-  }, [lastY])
+  }, [])
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-700 ${
-        visible || !scrolled ? 'translate-y-0' : '-translate-y-full'
-      } ${scrolled ? 'glass-nav' : 'bg-transparent'}`} style={{ transitionTimingFunction: 'cubic-bezier(0.16, 1, 0.3, 1)' }}>
-        <div className="max-w-[1400px] mx-auto px-6 lg:px-10 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-2.5 group">
-            <span className="font-display font-bold text-lg tracking-[6px] text-navy uppercase group-hover:tracking-[8px] transition-all duration-500">DASHU</span>
-            <span className="hidden sm:block text-[10px] text-stone tracking-[3px] uppercase font-medium border-l border-stone/30 pl-3 leading-none">For Men</span>
+      <nav className={`fixed top-0 left-0 right-0 z-50 h-16 glass-nav transition-shadow duration-300 ${scrolled ? 'shadow-sm' : ''}`}>
+        <div className="max-w-[1280px] mx-auto px-6 md:px-20 h-full flex items-center justify-between">
+          <Link to="/" className="flex items-center gap-3">
+            <LogoSvg />
           </Link>
-          <nav className="hidden md:flex items-center gap-8">
-            <a href="/#ritual" className="text-xs text-navy/60 hover:text-navy transition-colors duration-300 tracking-wide uppercase font-medium relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-navy after:transition-all after:duration-300 hover:after:w-full">Ritual</a>
-            <Link to="/tracking" className="text-xs text-navy/60 hover:text-navy transition-colors duration-300 tracking-wide uppercase font-medium relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-navy after:transition-all after:duration-300 hover:after:w-full">Tracking</Link>
-            <Link to="/admin" className="text-xs text-navy/60 hover:text-navy transition-colors duration-300 tracking-wide uppercase font-medium relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-navy after:transition-all after:duration-300 hover:after:w-full">Admin</Link>
-          </nav>
-          <div className="flex items-center gap-4">
-            <motion.button onClick={() => setIsOpen(true)} className="relative p-1.5 group"
-              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-navy transition-colors duration-300 group-hover:text-gold">
-                <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
+          <div className="hidden md:flex items-center gap-8 h-full">
+            {[
+              { label: 'Inicio', href: '/' },
+              { label: 'Cómo Usar', href: '/#como-usar' },
+              { label: 'Tracking', href: '/tracking' },
+            ].map((l) => (
+              l.href.startsWith('/#') ? (
+                <a key={l.label} href={l.href}
+                  className="label text-xs text-stone hover:text-navy transition-colors h-full flex items-center tracking-[0.12em]">
+                  {l.label}
+                </a>
+              ) : (
+                <Link key={l.label} to={l.href}
+                  className="label text-xs text-stone hover:text-navy transition-colors h-full flex items-center tracking-[0.12em]">
+                  {l.label}
+                </Link>
+              )
+            ))}
+          </div>
+          <div className="flex items-center gap-3">
+            <motion.button onClick={() => setIsOpen(true)} className="relative p-2"
+              whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#0F2038" strokeWidth="1.5" strokeLinecap="round">
+                <circle cx="9" cy="21" r="1"/><circle cx="20" cy="21" r="1"/>
+                <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"/>
               </svg>
               {totalItems > 0 && (
-                <motion.span key={totalItems} initial={{ scale: 0 }} animate={{ scale: 1 }} exit={{ scale: 0 }}
-                  className="absolute -top-1 -right-1 w-4 h-4 bg-navy text-cream text-[9px] font-semibold flex items-center justify-center">
+                <motion.span key={totalItems} initial={{ scale: 0 }} animate={{ scale: 1 }}
+                  className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-navy text-white text-[9px] font-semibold flex items-center justify-center rounded-full">
                   {totalItems}
                 </motion.span>
               )}
@@ -56,29 +69,25 @@ export default function Navbar() {
             </button>
           </div>
         </div>
-      </header>
+      </nav>
 
       <AnimatePresence>
         {menuOpen && (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            className="fixed inset-0 z-40 bg-cream/92 backdrop-blur-2xl flex flex-col items-center justify-center">
-            <nav className="flex flex-col items-center gap-8 text-center">
-              {[
-                { label: 'Inicio', to: '/' },
-                { label: 'Ritual', to: '/#ritual' },
-                { label: 'Tracking', to: '/tracking' },
-                { label: 'Admin', to: '/admin' },
-              ].map((l, i) => (
-                <motion.div key={l.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
-                  {l.to.startsWith('/#') ? (
-                    <a href={l.to} onClick={() => setMenuOpen(false)} className="font-display text-3xl text-navy hover:text-gold transition-colors">{l.label}</a>
+            className="fixed inset-0 z-40 bg-cream/90 backdrop-blur-2xl flex flex-col items-center justify-center">
+            <nav className="flex flex-col items-center gap-8">
+              {['Inicio', 'Cómo Usar', 'Tracking', 'Admin'].map((l, i) => (
+                <motion.div key={l} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }}>
+                  {l === 'Inicio' ? (
+                    <Link to="/" onClick={() => setMenuOpen(false)} className="h-lg text-navy hover:text-gold transition-colors">{l}</Link>
+                  ) : l === 'Cómo Usar' ? (
+                    <a href="/#como-usar" onClick={() => setMenuOpen(false)} className="h-lg text-navy hover:text-gold transition-colors">{l}</a>
                   ) : (
-                    <Link to={l.to} onClick={() => setMenuOpen(false)} className="font-display text-3xl text-navy hover:text-gold transition-colors">{l.label}</Link>
+                    <Link to={`/${l.toLowerCase()}`} onClick={() => setMenuOpen(false)} className="h-lg text-navy hover:text-gold transition-colors">{l}</Link>
                   )}
                 </motion.div>
               ))}
             </nav>
-            <p className="absolute bottom-10 text-xs text-stone/50 tracking-wider">DASHU FOR MEN © {new Date().getFullYear()}</p>
           </motion.div>
         )}
       </AnimatePresence>

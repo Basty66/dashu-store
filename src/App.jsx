@@ -9,7 +9,7 @@ import Admin from './pages/Admin'
 
 export default function App() {
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col" style={{ background: '#fff8f5' }}>
       <Navbar />
       <CartDrawer />
       <main className="flex-1">

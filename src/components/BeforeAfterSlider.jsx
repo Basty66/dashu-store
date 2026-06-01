@@ -24,24 +24,20 @@ export default function BeforeAfterSlider() {
   }, [drag, move])
 
   return (
-    <div ref={ref} className="relative w-full aspect-[4/3] lg:aspect-[16/7] overflow-hidden cursor-col-resize select-none bg-ivory">
-      {/* "After" layer (full image, shown on the right) */}
+    <div ref={ref} className="relative w-full aspect-[4/3] lg:aspect-[16/7] overflow-hidden cursor-col-resize select-none bg-[#e2d8d3] rounded">
       <img src={B} alt="Después" className="absolute inset-0 w-full h-full object-cover" draggable={false} />
-      {/* "Before" layer (clipped to pos%) */}
       <div className="absolute inset-0 overflow-hidden" style={{ width: `${pos}%` }}>
         <img src={B} alt="Antes" className="absolute top-0 left-0 w-full h-full object-cover max-w-none" style={{ width: `${100 / (pos / 100)}%` }} draggable={false} />
       </div>
-      {/* Drag capture overlay */}
       <div className="absolute inset-0" onMouseDown={down} onTouchStart={down} />
-      {/* Slider handle */}
       <div className="absolute top-0 bottom-0" style={{ left: `${pos}%` }}>
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[2px] bg-white/90 shadow-lg" />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-xl flex items-center justify-center">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.5" strokeLinecap="round"><polyline points="9 18 3 12 9 6" /><polyline points="15 18 21 12 15 6" /></svg>
+        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-[3px] bg-white shadow-md" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-xl flex items-center justify-center">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#0F2038" strokeWidth="2" strokeLinecap="round"><polyline points="9 18 3 12 9 6" /><polyline points="15 18 21 12 15 6" /></svg>
         </div>
       </div>
-      <div className="absolute bottom-3 left-3 glass px-3 py-1 text-[11px] font-medium text-navy/60 tracking-wide uppercase">Antes</div>
-      <div className="absolute bottom-3 right-3 glass px-3 py-1 text-[11px] font-medium text-navy/60 tracking-wide uppercase">Después</div>
+      <div className="absolute bottom-4 left-4 glass px-3 py-1.5 text-xs font-semibold tracking-wider uppercase" style={{ color: '#0F2038' }}>Antes</div>
+      <div className="absolute bottom-4 right-4 glass-strong px-3 py-1.5 text-xs font-semibold tracking-wider uppercase text-white" style={{ background: 'rgba(15,32,56,0.8)', backdropFilter: 'blur(8px)' }}>Después</div>
     </div>
   )
 }

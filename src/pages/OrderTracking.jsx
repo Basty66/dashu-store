@@ -1,126 +1,144 @@
-import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import OrderTimeline from '../components/OrderTimeline'
-import { api } from '../services/api'
-import MagneticButton from '../components/MagneticButton'
 
-const statusLabels = {
-  pending: 'Pendiente', paid: 'Pago Confirmado', preparing: 'En Preparación',
-  dispatched: 'En Camino', transit: 'En Tránsito', delivered: 'Entregado',
+const STATUSES = ['Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado']
+const STATUS_LABELS = ['Pendiente', 'Confirmado', 'En Preparación', 'En Tránsito', 'Entregado']
+
+function getTimelineData(statusIdx) {
+  return STATUSES.map((s, i) => ({
+    label: STATUS_LABELS[i],
+    completed: i <= statusIdx,
+    active: i === statusIdx,
+    isLast: i === STATUSES.length - 1,
+  }))
 }
 
 export default function OrderTracking() {
-  const { orderNumber } = useParams()
-  const [search, setSearch] = useState(orderNumber || '')
+  const [orderNumber, setOrderNumber] = useState('')
   const [order, setOrder] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const fetchOrder = async (num) => {
-    if (!num) return
-    setLoading(true); setError('')
-    try { setOrder(await api.orders.get(num)) }
-    catch { setError('Orden no encontrada'); setOrder(null) }
-    finally { setLoading(false) }
+  const search = async () => {
+    if (!orderNumber.trim()) return
+    setLoading(true)
+    setError('')
+    setOrder(null)
+    try {
+      const r = await fetch(`/api/orders/${orderNumber.trim()}`)
+      if (!r.ok) throw new Error('Pedido no encontrado')
+      setOrder(await r.json())
+    } catch {
+      setError('No encontramos un pedido con ese número. Verifica e intenta de nuevo.')
+    } finally {
+      setLoading(false)
+    }
   }
 
-  useEffect(() => { if (orderNumber) fetchOrder(orderNumber) }, [orderNumber])
-  const handleSearch = (e) => { e.preventDefault(); fetchOrder(search.trim().toUpperCase()) }
-
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-cream" style={{ position: 'relative', zIndex: 1 }}>
-      <div className="fixed inset-0 pointer-events-none overflow-hidden">
-        <div className="orb orb-cream animate-orb" style={{ top: '15%', left: '-10%', opacity: 0.3 }} />
-        <div className="orb orb-navy animate-orb-reverse" style={{ bottom: '25%', right: '-5%', opacity: 0.15 }} />
-      </div>
-
-      <div className="max-w-2xl mx-auto px-6 lg:px-10 relative">
+    <div className="min-h-screen pt-20 pb-16" style={{ background: '#fff8f5' }}>
+      <div className="max-w-[1280px] mx-auto px-6 md:px-20">
         <div className="text-center mb-10">
-          <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight mb-2">Seguimiento</h1>
-          <p className="text-sm text-stone">Ingresa tu número de pedido DSH-XXXXX</p>
+          <span className="label text-xs" style={{ color: '#755841' }}>Seguimiento</span>
+          <h1 className="h-lg text-3xl mt-2" style={{ color: '#0F2038' }}>Rastrea tu Pedido</h1>
         </div>
 
-        <form onSubmit={handleSearch} className="flex gap-3 max-w-sm mx-auto mb-12">
-          <div className="flex-1 floating-input-wrap">
-            <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="" className="text-center font-medium tracking-wide" style={{ padding: '12px 16px' }} />
-            <label style={{ left: '50%', transform: 'translateX(-50%) translateY(-50%)', textAlign: 'center' }}>#DSH-00000</label>
+        {/* SEARCH */}
+        <div className="max-w-md mx-auto mb-16">
+          <div className="relative flex items-center">
+            <input className="input-minimal w-full pr-12" placeholder="N° de pedido (ej. DASHU-001)" value={orderNumber}
+              onChange={e => setOrderNumber(e.target.value)} onKeyDown={e => e.key === 'Enter' && search()} />
+            <motion.button className="absolute right-2 p-2" onClick={search} disabled={loading}
+              whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0F2038" strokeWidth="2" strokeLinecap="round">
+                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+              </svg>
+            </motion.button>
           </div>
-          <MagneticButton type="submit" className="btn-primary px-6 shrink-0" disabled={loading}>
-            {loading ? (
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="animate-spin"><circle cx="12" cy="12" r="10" strokeDasharray="32" strokeDashoffset="32" strokeLinecap="round"/></svg>
-            ) : 'Buscar'}
-          </MagneticButton>
-        </form>
+          {error && <p className="text-xs mt-2" style={{ color: '#b91c1c' }}>{error}</p>}
+        </div>
 
         <AnimatePresence mode="wait">
-          {error && (
-            <motion.div key="error" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-center py-16">
-              <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#ccc" strokeWidth="1" className="mx-auto mb-4">
-                <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-              </svg>
-              <p className="text-sm text-stone mb-3">{error}</p>
-              <p className="text-xs text-stone/50">Verifica el número e intenta nuevamente</p>
-            </motion.div>
-          )}
-
           {order && (
-            <motion.div key="order" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-5">
-              <div className="glass p-6 lg:p-8">
-                <div className="flex items-start justify-between mb-6">
-                  <div>
-                    <h2 className="font-display font-semibold text-lg text-navy">{order.order_number}</h2>
-                    <p className="text-xs text-stone mt-1">
-                      {new Date(order.created_at).toLocaleDateString('es-CL', { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
-                    </p>
-                  </div>
-                  <motion.span key={order.status} initial={{ scale: 0.9 }} animate={{ scale: 1 }}
-                    className={`px-3 py-1 text-[11px] font-medium uppercase tracking-wider ${
-                      order.status === 'delivered' ? 'bg-navy text-white' :
-                      order.status === 'dispatched' || order.status === 'transit' ? 'bg-gold text-white' :
-                      'bg-white/60 backdrop-blur-sm text-stone border border-navy/5'
-                    }`}>{statusLabels[order.status] || order.status}</motion.span>
-                </div>
-                <OrderTimeline status={order.status} />
-              </div>
+            <motion.div key={order.orderNumber} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+              className="max-w-3xl mx-auto space-y-12">
 
-              <div className="glass p-6 lg:p-8">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                  <div>
-                    <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Envío</h3>
-                    <p className="text-sm font-medium text-navy">{order.customer_name}</p>
-                    <p className="text-xs text-stone">{order.customer_email}</p>
-                    <div className="divider my-3" />
-                    <p className="text-xs text-stone leading-relaxed">{order.shipping_address}<br />{order.shipping_city}, {order.shipping_region}</p>
-                  </div>
-                  <div>
-                    <h3 className="text-[11px] font-medium text-stone uppercase tracking-wider mb-3">Productos</h3>
-                    {order.items?.map(item => (
-                      <div key={item.id} className="flex justify-between text-sm mb-2">
-                        <span className="text-navy">{item.product_name || `Producto #${item.product_id}`} × {item.quantity}</span>
-                        <span className="text-stone">${(item.unit_price * item.quantity).toLocaleString('es-CL')}</span>
-                      </div>
-                    ))}
-                    <div className="divider my-3" />
-                    <div className="flex justify-between font-display font-semibold text-base text-navy">
-                      <span>Total</span><span>${order.total.toLocaleString('es-CL')}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="glass p-5 flex items-center gap-4">
-                <div className="w-9 h-9 bg-white/40 flex items-center justify-center flex-shrink-0 animate-pulse-glow rounded-full">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
-                </div>
+              {/* HEADER */}
+              <div className="glass p-6 rounded flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                  <p className="text-xs font-medium text-navy">Despachado por Starken</p>
-                  <p className="text-[11px] text-stone mt-0.5">N° seguimiento: <span className="font-medium text-navy">{order.tracking_number || 'Pendiente'}</span></p>
+                  <p className="text-xs" style={{ color: '#44474d' }}>Pedido</p>
+                  <p className="h-md text-navy">{order.orderNumber}</p>
+                </div>
+                <div className="text-right">
+                  <p className="text-xs" style={{ color: '#44474d' }}>Estado Actual</p>
+                  <span className="inline-block mt-1 px-3 py-1 text-xs font-medium rounded-full"
+                    style={{ backgroundColor: order.status === 'Entregado' ? 'rgba(117,88,65,0.15)' : 'rgba(15,32,56,0.08)', color: order.status === 'Entregado' ? '#755841' : '#0F2038' }}>
+                    {order.status}
+                  </span>
                 </div>
               </div>
 
-              <div className="text-center pt-2">
-                <Link to="/" className="text-xs text-stone hover:text-navy transition-colors underline underline-offset-4">Volver al inicio</Link>
+              {/* TIMELINE */}
+              <div>
+                <h2 className="h-md text-navy mb-8 text-center">Estado del Pedido</h2>
+                <div className="relative flex flex-col items-center">
+                  {(() => {
+                    const statusIdx = STATUSES.indexOf(order.status)
+                    const timeline = statusIdx >= 0 ? getTimelineData(statusIdx) : []
+                    return (
+                      <div className="relative w-full max-w-xl">
+                        {/* line */}
+                        <div className="absolute left-8 top-6 bottom-6 w-[2px] bg-outline-v/30">
+                          <motion.div initial={{ height: '0%' }} animate={{ height: `${((statusIdx + 1) / STATUSES.length) * 100}%` }}
+                            transition={{ duration: 1, ease: 'easeOut' }}
+                            className="w-full bg-gold" />
+                        </div>
+                        {timeline.map((t, i) => (
+                          <div key={t.label} className="flex items-start gap-6 pb-8 last:pb-0">
+                            <div className="relative z-10 flex-shrink-0">
+                              <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ delay: i * 0.12 }}
+                                className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${t.active ? 'bg-gold border-gold' : t.completed ? 'bg-gold border-gold' : 'bg-cream border-outline-v/40'}`}>
+                                {t.completed && (
+                                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="3" strokeLinecap="round">
+                                    <polyline points="20 6 9 17 4 12"/>
+                                  </svg>
+                                )}
+                              </motion.div>
+                            </div>
+                            <div className="pt-1">
+                              <p className={`h-sm text-sm ${t.active ? 'text-navy' : t.completed ? 'text-navy' : 'text-stone'}`}>{t.label}</p>
+                              {t.active && (
+                                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
+                                  className="text-xs mt-1" style={{ color: '#755841' }}>
+                                  En proceso
+                                </motion.p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )
+                  })()}
+                </div>
+              </div>
+
+              {/* DETAILS */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="glass p-6 rounded space-y-3">
+                  <h3 className="h-sm text-navy">Productos</h3>
+                  {order.items?.map(item => (
+                    <div key={item.id} className="flex justify-between text-sm">
+                      <span style={{ color: '#44474d' }}>{item.title} × {item.quantity}</span>
+                      <span style={{ color: '#0F2038' }}>${(item.price * item.quantity).toLocaleString('es-CL')}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="glass p-6 rounded space-y-3">
+                  <h3 className="h-sm text-navy">Envío</h3>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{order.shipping?.name}</p>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{order.shipping?.address}, {order.shipping?.city}, {order.shipping?.region}</p>
+                  <p className="text-sm" style={{ color: '#44474d' }}>{order.shipping?.email} · {order.shipping?.phone}</p>
+                </div>
               </div>
             </motion.div>
           )}
