@@ -1,62 +1,43 @@
-const statusMap = { pending: 0, paid: 1, preparing: 2, dispatched: 3, transit: 4, delivered: 5 }
+const MAP = { pending: 0, paid: 1, preparing: 2, dispatched: 3, transit: 4, delivered: 5 }
 
 const steps = [
-  { label: 'Recibido', sub: 'Pedido confirmado', icon: 'inbox' },
-  { label: 'Preparación', sub: 'Empacando tu pedido', icon: 'package' },
-  { label: 'Despachado', sub: 'En manos del courier', icon: 'truck' },
-  { label: 'En Tránsito', sub: 'Rumbo a tu domicilio', icon: 'map-pin' },
-  { label: 'Entregado', sub: '¡Recibido con éxito!', icon: 'check-circle' },
+  { label: 'Recibido', sub: 'Pedido confirmado' },
+  { label: 'Preparación', sub: 'Empacando' },
+  { label: 'Despachado', sub: 'En ruta' },
+  { label: 'En Tránsito', sub: 'Camino a tu domicilio' },
+  { label: 'Entregado', sub: '¡Recibido!' },
 ]
 
 export default function OrderTimeline({ status, trackingNumber }) {
-  const current = statusMap[status] ?? 0
+  const cur = MAP[status] ?? 0
 
   return (
-    <div className="w-full">
-      <div className="relative">
-        {steps.map((step, i) => {
-          const done = i < current
-          const active = i === current
-
-          return (
-            <div key={i} className="flex gap-5 pb-8 last:pb-0 relative">
-              <div className="flex flex-col items-center">
-                <div
-                  className={`relative z-10 w-10 h-10 rounded-full flex items-center justify-center transition-all duration-500 ${
-                    done
-                      ? 'bg-charcoal text-white'
-                      : active
-                      ? 'bg-charcoal text-white ring-4 ring-charcoal/10'
-                      : 'bg-mist text-slate'
-                  }`}
-                >
-                  {done ? (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                      <polyline points="20 6 9 17 4 12" />
-                    </svg>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                      <circle cx="12" cy="12" r="10" />
-                    </svg>
-                  )}
-                </div>
-                {i < steps.length - 1 && (
-                  <div className={`w-0.5 flex-1 mt-1 ${done ? 'bg-charcoal' : 'bg-mist'}`} />
+    <div className="flex flex-col gap-0">
+      {steps.map((s, i) => {
+        const done = i < cur
+        const active = i === cur
+        return (
+          <div key={i} className="flex gap-5 pb-6 last:pb-0 relative">
+            <div className="flex flex-col items-center">
+              <div className={`relative z-10 w-9 h-9 flex items-center justify-center transition-all ${
+                done ? 'bg-soot text-parchment' : active ? 'bg-soot text-parchment' : 'bg-linen text-stone'
+              }`}>
+                {done ? (
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="20 6 9 17 4 12" /></svg>
+                ) : (
+                  <span className="text-xs font-medium">{i + 1}</span>
                 )}
               </div>
-              <div className="pt-1.5">
-                <p className={`font-display font-semibold text-sm ${done || active ? 'text-charcoal' : 'text-slate'}`}>
-                  {step.label}
-                </p>
-                <p className="text-xs text-slate mt-0.5">{step.sub}</p>
-                {i === 2 && trackingNumber && (
-                  <p className="text-xs text-taupe mt-1 font-medium">N° Seguimiento: {trackingNumber}</p>
-                )}
-              </div>
+              {i < steps.length - 1 && <div className={`w-px flex-1 mt-1 ${done || active ? 'bg-soot' : 'bg-linen'}`} />}
             </div>
-          )
-        })}
-      </div>
+            <div className="pt-1">
+              <p className={`text-sm font-medium ${done || active ? 'text-soot' : 'text-stone'}`}>{s.label}</p>
+              <p className="text-xs text-stone/70 mt-0.5">{s.sub}</p>
+              {i === 2 && trackingNumber && <p className="text-[11px] text-clay mt-1">N°: {trackingNumber}</p>}
+            </div>
+          </div>
+        )
+      })}
     </div>
   )
 }
