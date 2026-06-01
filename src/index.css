@@ -1,0 +1,104 @@
+@import "tailwindcss";
+
+@theme {
+  --color-navy: #0f2038;
+  --color-navy-light: #1a3355;
+  --color-brown: #634832;
+  --color-brown-light: #755841;
+  --color-charcoal: #333333;
+  --color-cream: #f5ebe6;
+  --color-cream-dark: #eae1dc;
+  --color-gold: #c9a84c;
+  --font-display: "Hanken Grotesk", sans-serif;
+  --font-body: "Inter", sans-serif;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-family: var(--font-body);
+  background-color: var(--color-cream);
+  color: var(--color-charcoal);
+}
+
+.glass {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.glass-dark {
+  background: rgba(15, 32, 56, 0.8);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 16px;
+}
+
+.btn-primary {
+  background: var(--color-navy);
+  color: white;
+  padding: 12px 32px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary:hover {
+  background: var(--color-navy-light);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(15, 32, 56, 0.3);
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--color-navy);
+  padding: 12px 32px;
+  border-radius: 999px;
+  font-weight: 600;
+  font-family: var(--font-display);
+  border: 2px solid var(--color-navy);
+  transition: all 0.3s;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: var(--color-navy);
+  color: white;
+}
+
+.fade-in-section {
+  opacity: 0;
+  transform: translateY(30px);
+  transition: opacity 0.8s ease, transform 0.8s ease;
+}
+
+.fade-in-section.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+}
