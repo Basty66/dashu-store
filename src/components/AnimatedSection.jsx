@@ -6,17 +6,13 @@ export default function AnimatedSection({ children, className = '', delay = 0 })
   useEffect(() => {
     const el = ref.current
     if (!el) return
-    const observer = new IntersectionObserver(
-      ([entry]) => { if (entry.isIntersecting) { el.classList.add('is-visible'); observer.disconnect() } },
+    const o = new IntersectionObserver(
+      ([e]) => { if (e.isIntersecting) { el.classList.add('is-visible'); o.disconnect() } },
       { threshold: 0.08, rootMargin: '0px 0px -40px 0px' }
     )
-    observer.observe(el)
-    return () => observer.disconnect()
+    o.observe(el)
+    return () => o.disconnect()
   }, [])
 
-  return (
-    <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}s` }}>
-      {children}
-    </div>
-  )
+  return <div ref={ref} className={`reveal ${className}`} style={{ transitionDelay: `${delay}s` }}>{children}</div>
 }

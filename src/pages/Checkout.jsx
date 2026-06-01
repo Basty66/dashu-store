@@ -4,18 +4,12 @@ import { motion } from 'framer-motion'
 import { useCart } from '../context/CartContext'
 import { api } from '../services/api'
 import { REGIONS, getCommunes } from '../services/chile'
+import MagneticButton from '../components/MagneticButton'
 
-const WebpayIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-    <rect x="1" y="5" width="22" height="14" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/><rect x="4" y="12" width="6" height="2" rx="0.5" fill="#0B192C" stroke="none"/><rect x="12" y="12" width="6" height="2" rx="0.5" fill="#0B192C" stroke="none"/>
-  </svg>
-)
-
-const MPIcon = () => (
-  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2" strokeLinecap="round" strokeLinejoin="round">
-    <circle cx="12" cy="12" r="10"/><path d="M9 12c0-2 1.5-3 3-3s3 1 3 3-1.5 3-3 3-3-1-3-3z"/><path d="M12 8V6m0 12v-2"/>
-  </svg>
-)
+const tabs = [
+  { id: 'webpay', label: 'Webpay Plus', desc: 'Débito · Crédito · Redcompra' },
+  { id: 'mercadopago', label: 'Mercado Pago', desc: 'Tarjeta · Efectivo · Transferencia' },
+]
 
 export default function Checkout() {
   const { items, subtotal, clearCart } = useCart()
@@ -63,82 +57,90 @@ export default function Checkout() {
             <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/>
           </svg>
           <p className="text-sm text-stone mb-6">Tu carrito está vacío</p>
-          <button onClick={() => navigate('/')} className="btn-primary">Volver a Comprar</button>
+          <MagneticButton onClick={() => navigate('/')} className="btn-primary">Volver a Comprar</MagneticButton>
         </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-cream">
-      <div className="max-w-5xl mx-auto px-6 lg:px-10">
+    <div className="min-h-screen pt-24 pb-20 bg-cream" style={{ position: 'relative', zIndex: 1 }}>
+      {/* Ambient orbs */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="orb orb-cream animate-orb" style={{ top: '10%', right: '-15%', opacity: 0.3 }} />
+        <div className="orb orb-gold animate-orb-reverse" style={{ bottom: '20%', left: '-10%', opacity: 0.2 }} />
+      </div>
+
+      <div className="max-w-5xl mx-auto px-6 lg:px-10 relative">
         <div className="flex items-center gap-3 mb-10">
-          <button onClick={() => navigate('/')} className="p-1 hover:opacity-60 transition-opacity">
+          <motion.button onClick={() => navigate('/')} className="p-1" whileHover={{ x: -3 }} transition={{ type: 'spring', damping: 15 }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.2" className="text-stone"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></svg>
-          </button>
+          </motion.button>
           <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight">Checkout</h1>
         </div>
 
         <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-5 gap-6">
           <div className="lg:col-span-3 space-y-5">
             {/* Shipping */}
-            <div className="glass-card-strong p-6 lg:p-8 space-y-5">
+            <div className="glass p-6 lg:p-8 space-y-5">
               <h2 className="font-semibold text-xs tracking-wider uppercase text-navy/70">Datos de Envío</h2>
               <div className="grid grid-cols-2 gap-4">
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Nombre Completo</label>
-                  <input type="text" name="name" required value={form.name} onChange={handleChange} className="input" placeholder="Juan Pérez" />
+                <div className="col-span-2 floating-input-wrap">
+                  <input type="text" name="name" required value={form.name} onChange={handleChange} placeholder="" />
+                  <label>Nombre Completo</label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Email</label>
-                  <input type="email" name="email" required value={form.email} onChange={handleChange} className="input" placeholder="juan@ejemplo.cl" />
+                <div className="floating-input-wrap">
+                  <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="" />
+                  <label>Email</label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Teléfono</label>
-                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} className="input" placeholder="+56 9 1234 5678" />
+                <div className="floating-input-wrap">
+                  <input type="tel" name="phone" value={form.phone} onChange={handleChange} placeholder="" />
+                  <label>Teléfono</label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Región</label>
-                  <select name="region" required value={form.region} onChange={handleChange} className="select">
-                    <option value="">Seleccionar</option>
+                <div className="floating-input-wrap">
+                  <select name="region" required value={form.region} onChange={handleChange}>
+                    <option value=""></option>
                     {REGIONS.map(r => <option key={r.name}>{r.name}</option>)}
                   </select>
+                  <label>Región</label>
                 </div>
-                <div>
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Comuna</label>
-                  <select name="commune" required value={form.commune} onChange={handleChange} className="select" disabled={!communes.length}>
-                    <option value="">Seleccionar</option>
+                <div className="floating-input-wrap">
+                  <select name="commune" required value={form.commune} onChange={handleChange} disabled={!communes.length}>
+                    <option value=""></option>
                     {communes.map(c => <option key={c}>{c}</option>)}
                   </select>
+                  <label>Comuna</label>
                 </div>
-                <div className="col-span-2">
-                  <label className="block text-[11px] font-medium text-stone mb-1.5">Dirección</label>
-                  <input type="text" name="address" required value={form.address} onChange={handleChange} className="input" placeholder="Av. Providencia 1234, Depto 301" />
+                <div className="col-span-2 floating-input-wrap">
+                  <input type="text" name="address" required value={form.address} onChange={handleChange} placeholder="" />
+                  <label>Dirección</label>
                 </div>
               </div>
             </div>
 
             {/* Payment */}
-            <div className="glass-card-strong p-6 lg:p-8">
+            <div className="glass p-6 lg:p-8">
               <h2 className="font-semibold text-xs tracking-wider uppercase text-navy/70 mb-5">Método de Pago</h2>
-              <div className="grid grid-cols-2 gap-3">
-                <button type="button" onClick={() => setPaymentMethod('webpay')}
-                  className={`payment-tab flex flex-col items-center gap-3 ${paymentMethod === 'webpay' ? 'active' : ''}`}>
-                  <WebpayIcon />
-                  <div>
-                    <p className="text-sm font-medium text-navy">Webpay Plus</p>
-                    <p className="text-[11px] text-stone">Débito · Crédito · Redcompra</p>
-                  </div>
-                </button>
-                <button type="button" onClick={() => setPaymentMethod('mercadopago')}
-                  className={`payment-tab flex flex-col items-center gap-3 ${paymentMethod === 'mercadopago' ? 'active' : ''}`}>
-                  <MPIcon />
-                  <div>
-                    <p className="text-sm font-medium text-navy">Mercado Pago</p>
-                    <p className="text-[11px] text-stone">Tarjeta · Efectivo · Transferencia</p>
-                  </div>
-                </button>
+              {/* Sliding capsule toggle */}
+              <div className="capsule-track max-w-sm">
+                <div
+                  className="capsule-indicator"
+                  style={{
+                    left: paymentMethod === 'webpay' ? '4px' : '50%',
+                    width: paymentMethod === 'webpay' ? 'calc(50% - 6px)' : 'calc(50% - 6px)',
+                  }}
+                />
+                {tabs.map(t => (
+                  <button key={t.id} type="button"
+                    onClick={() => setPaymentMethod(t.id)}
+                    className={`capsule-option ${paymentMethod === t.id ? 'active' : ''}`}>
+                    {t.label}
+                  </button>
+                ))}
               </div>
+              <p className="text-[11px] text-stone mt-3 ml-1">
+                {tabs.find(t => t.id === paymentMethod)?.desc}
+              </p>
               <div className="flex items-center gap-2.5 mt-4 pt-4 border-t border-navy/[0.03]">
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#8B8580" strokeWidth="1.2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
                 <p className="text-[11px] text-stone">Transacción 100% segura</p>
@@ -148,7 +150,7 @@ export default function Checkout() {
 
           {/* Right — Summary */}
           <div className="lg:col-span-2">
-            <div className="glass-card-strong p-6 lg:p-8 sticky top-24">
+            <div className="glass p-6 lg:p-8 sticky top-24">
               <h2 className="font-semibold text-xs tracking-wider uppercase text-navy/70 mb-5">Resumen</h2>
               <div className="space-y-3 mb-5">
                 {items.map(item => (

@@ -1,5 +1,6 @@
-import { useState } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useMotionValue, useSpring, useTransform } from 'framer-motion'
+import { useCart } from '../context/CartContext'
 
 let nextId = 5
 const initialProducts = [
@@ -13,7 +14,20 @@ const statusStyles = {
   'Óptimo': 'bg-navy/10 text-navy', 'Bajo': 'bg-gold/15 text-gold', 'Crítico': 'bg-red-50 text-red-700',
 }
 
-import { useCart } from '../context/CartContext'
+function AnimatedCounter({ value, suffix = '' }) {
+  const count = useMotionValue(0)
+  const rounded = useTransform(count, (v) => Math.round(v))
+  const spring = useSpring(count, { damping: 25, stiffness: 200 })
+
+  useEffect(() => { spring.set(value) }, [value, spring])
+
+  return (
+    <span className="font-display font-bold text-xl text-navy">
+      <motion.span>{rounded}</motion.span>
+      {suffix && <span className="text-xs font-normal text-stone ml-0.5">{suffix}</span>}
+    </span>
+  )
+}
 
 export default function Admin() {
   const { items: cartItems } = useCart()
@@ -23,6 +37,15 @@ export default function Admin() {
   const [products, setProducts] = useState(initialProducts)
   const [showForm, setShowForm] = useState(false)
   const [newProduct, setNewProduct] = useState({ name: '', sku: '', stock: 0, price: 0 })
+  const [floatingOpen, setFloatingOpen] = useState(false)
+  const fabRef = useRef(null)
+
+  useEffect(() => {
+    if (!floatingOpen) return
+    const handler = (e) => { if (fabRef.current && !fabRef.current.contains(e.target)) setFloatingOpen(false) }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  }, [floatingOpen])
 
   const addProduct = (e) => {
     e.preventDefault()
@@ -38,15 +61,22 @@ export default function Admin() {
   if (!loggedIn) {
     return (
       <div className="min-h-screen flex items-center justify-center px-6 bg-cream">
-        <div className="glass-card-strong p-8 w-full max-w-sm">
+        <div className="glass p-8 w-full max-w-sm">
           <div className="text-center mb-6">
             <p className="font-display font-bold text-lg tracking-[6px] text-navy uppercase mb-1">Dashu</p>
             <p className="text-xs text-stone">Panel de Administración</p>
           </div>
           <form onSubmit={(e) => { e.preventDefault(); setLoggedIn(true) }} className="space-y-3">
-            <input type="email" placeholder="admin@dashu.cl" value={email} onChange={(e) => setEmail(e.target.value)} className="input" />
-            <input type="password" placeholder="Contraseña" value={password} onChange={(e) => setPassword(e.target.value)} className="input" />
-            <button type="submit" className="btn-primary w-full justify-center">Ingresar</button>
+            <div className="floating-input-wrap">
+              <input type="email" placeholder="" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <label>admin@dashu.cl</label>
+            </div>
+            <div className="floating-input-wrap">
+              <input type="password" placeholder="" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <label>Contraseña</label>
+            </div>
+            <motion.button type="submit" className="btn-primary w-full justify-center"
+              whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>Ingresar</motion.button>
           </form>
         </div>
       </div>
@@ -54,32 +84,35 @@ export default function Admin() {
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-20 bg-cream">
+    <div className="min-h-screen pt-24 pb-20 bg-cream" style={{ position: 'relative', zIndex: 1 }}>
       <div className="max-w-6xl mx-auto px-6 lg:px-10">
         <div className="flex items-center justify-between mb-8">
           <div>
             <h1 className="font-display font-bold text-2xl lg:text-3xl text-navy tracking-tight">Dashboard</h1>
             <p className="text-xs text-stone mt-1">Panel de control</p>
           </div>
-          <button onClick={() => setLoggedIn(false)} className="text-xs text-stone hover:text-navy transition-colors uppercase tracking-wider">Salir</button>
+          <button onClick={() => setLoggedIn(false)} className="text-xs text-stone hover:text-navy transition-colors uppercase tracking-wider relative after:absolute after:bottom-0 after:left-0 after:w-0 after:h-[1px] after:bg-stone after:transition-all after:duration-300 hover:after:w-full">Salir</button>
         </div>
 
+        {/* Stats cards */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {[
             { label: 'Stock Total', value: stats.totalStock, suffix: 'unid.' },
-            { label: 'Ventas del Mes', value: '$1,249,500', suffix: '' },
+            { label: 'Ventas del Mes', value: stats.totalSales, suffix: '', prefix: '$' },
             { label: 'Órdenes', value: stats.orders, suffix: '' },
             { label: 'Carritos', value: cartItems.length, suffix: 'items' },
           ].map((card, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}
-              className="glass-card-strong p-5">
+              className="glass p-5">
               <p className="text-[11px] text-stone uppercase tracking-wider mb-1">{card.label}</p>
-              <p className="font-display font-bold text-xl text-navy">{card.value} <span className="text-xs font-normal text-stone">{card.suffix}</span></p>
+              {card.prefix && <span className="font-display font-bold text-xl text-navy">{card.prefix}</span>}
+              {card.value && <AnimatedCounter value={card.value} suffix={card.suffix} />}
             </motion.div>
           ))}
         </div>
 
-        <div className="glass-card-strong overflow-hidden">
+        {/* Inventory table */}
+        <div className="glass overflow-hidden">
           <div className="flex items-center justify-between px-6 py-5 border-b border-navy/[0.03]">
             <h2 className="font-semibold text-xs tracking-wider uppercase text-navy/70">Inventario</h2>
             <button onClick={() => setShowForm(!showForm)} className="text-xs text-navy hover:text-gold transition-colors font-medium uppercase tracking-wider">
@@ -87,17 +120,21 @@ export default function Admin() {
             </button>
           </div>
 
-          {showForm && (
-            <form onSubmit={addProduct} className="px-6 py-4 border-b border-navy/[0.03] bg-cream/50">
-              <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
-                <input placeholder="Nombre" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} className="input text-xs" />
-                <input placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct(p => ({ ...p, sku: e.target.value }))} className="input text-xs" />
-                <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: Number(e.target.value) }))} className="input text-xs" />
-                <input type="number" placeholder="Precio" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: Number(e.target.value) }))} className="input text-xs" />
-                <button type="submit" className="btn-primary justify-center text-xs">Guardar</button>
-              </div>
-            </form>
-          )}
+          <AnimatePresence>
+            {showForm && (
+              <motion.form initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }}
+                onSubmit={addProduct} className="px-6 py-4 border-b border-navy/[0.03] bg-cream/50 overflow-hidden">
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+                  <input placeholder="Nombre" value={newProduct.name} onChange={e => setNewProduct(p => ({ ...p, name: e.target.value }))} className="input text-xs" />
+                  <input placeholder="SKU" value={newProduct.sku} onChange={e => setNewProduct(p => ({ ...p, sku: e.target.value }))} className="input text-xs" />
+                  <input type="number" placeholder="Stock" value={newProduct.stock} onChange={e => setNewProduct(p => ({ ...p, stock: Number(e.target.value) }))} className="input text-xs" />
+                  <input type="number" placeholder="Precio" value={newProduct.price} onChange={e => setNewProduct(p => ({ ...p, price: Number(e.target.value) }))} className="input text-xs" />
+                  <motion.button type="submit" className="btn-primary justify-center text-xs"
+                    whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>Guardar</motion.button>
+                </div>
+              </motion.form>
+            )}
+          </AnimatePresence>
 
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
@@ -131,6 +168,31 @@ export default function Admin() {
             </table>
           </div>
         </div>
+      </div>
+
+      {/* Floating glass dashboard toggle */}
+      <div ref={fabRef} className="fixed bottom-6 right-6 z-40">
+        <AnimatePresence>
+          {floatingOpen && (
+            <motion.div initial={{ opacity: 0, y: 10, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              className="glass-strong p-5 mb-3 min-w-[200px]">
+              <p className="text-[11px] text-stone uppercase tracking-wider mb-3">Resumen Rápido</p>
+              <div className="space-y-2">
+                <div className="flex justify-between text-xs"><span className="text-stone">Stock total</span><span className="font-medium text-navy">{stats.totalStock} unid.</span></div>
+                <div className="flex justify-between text-xs"><span className="text-stone">Órdenes</span><span className="font-medium text-navy">{stats.orders}</span></div>
+                <div className="flex justify-between text-xs"><span className="text-stone">Carritos</span><span className="font-medium text-navy">{cartItems.length} items</span></div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        <motion.button onClick={() => setFloatingOpen(!floatingOpen)}
+          className="w-12 h-12 glass-strong flex items-center justify-center shadow-lg"
+          whileHover={{ scale: 1.1 }} whileTap={{ scale: 0.9 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0B192C" strokeWidth="1.2">
+            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+          </svg>
+        </motion.button>
       </div>
     </div>
   )
