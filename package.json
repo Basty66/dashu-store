@@ -1,0 +1,36 @@
+{
+  "name": "dashu-store",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "start /b node dev-server.js && vite",
+    "dev:api": "node dev-server.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:seed": "node prisma/seed.js"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^0.10.0",
+    "@prisma/client": "^6.5.0",
+    "framer-motion": "^12.7.0",
+    "lucide-react": "^0.482.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "react-router-dom": "^7.5.0",
+    "resend": "^4.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.4.0",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.5.0",
+    "prisma": "^6.5.0",
+    "tailwindcss": "^3.4.17",
+    "vite": "^6.3.0"
+  },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  }
+}

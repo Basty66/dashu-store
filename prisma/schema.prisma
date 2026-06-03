@@ -1,0 +1,78 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_DATABASE_URL")
+}
+
+model Product {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  price       Int
+  offerPrice  Int?
+  stock       Int    @default(0)
+  images      String[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  orderItems  OrderItem[]
+}
+
+model Order {
+  id              Int         @id @default(autoincrement())
+  orderNumber     String      @unique
+  status          String      @default("Pendiente")
+  total           Int
+  discount        Int         @default(0)
+  couponCode      String?
+  paymentMethod   String?
+  paymentId       String?
+  customerName    String
+  customerEmail   String
+  customerPhone   String?
+  shippingRegion  String?
+  shippingCity    String?
+  shippingAddress String?
+  notes           String?
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  items           OrderItem[]
+}
+
+model Coupon {
+  id        Int       @id @default(autoincrement())
+  code      String    @unique
+  type      String    @default("percentage")
+  value     Int
+  minTotal  Int       @default(0)
+  maxUses   Int?
+  usedCount Int       @default(0)
+  expiresAt DateTime?
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+}
+
+model Review {
+  id            Int      @id @default(autoincrement())
+  customerName  String
+  customerEmail String?
+  rating        Int
+  comment       String
+  isApproved    Boolean  @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Int
+  title     String
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
