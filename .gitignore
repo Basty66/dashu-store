@@ -7,3 +7,11 @@ dist/
 .DS_Store
 Thumbs.db
 prisma/seed.js
+
+.vercel/
+dist/
+dev-err.log
+dev-out.log
+syntax_test.js
+restart-api.cmd
+restart-api.ps1
