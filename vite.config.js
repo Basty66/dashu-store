@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
+<<<<<<< HEAD
 
 export default defineConfig({
   plugins: [react()],
@@ -13,4 +14,10 @@ export default defineConfig({
       overlay: false,
     },
   },
+=======
+import tailwindcss from '@tailwindcss/vite'
+
+export default defineConfig({
+  plugins: [react(), tailwindcss()],
+>>>>>>> ec609ef59daaa2cb67669e3e72f00cd9dbfec85b
 })
