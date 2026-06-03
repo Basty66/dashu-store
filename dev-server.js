@@ -55,6 +55,19 @@ async function findHandler(segments, query) {
   if (handler) return handler
 
   if (segments.length >= 1) {
+    // Try catch-all [...slug].js from deepest to shallowest
+    for (let i = segments.length - 1; i >= 0; i--) {
+      const dirSegments = segments.slice(0, i)
+      const dir = path.join(__dirname, 'api', ...dirSegments)
+      try {
+        const files = fs.readdirSync(dir)
+        const catchAll = files.find(f => f.startsWith('[...') && f.endsWith('.js'))
+        if (catchAll) {
+          handler = await loadHandler([...dirSegments, catchAll.slice(0, -3)])
+          if (handler) return handler
+        }
+      } catch {}
+    }
     // Try consolidated parent file: e.g. api/admin.js for /api/admin/orders
     handler = await loadHandler([segments[0]])
     if (handler) return handler

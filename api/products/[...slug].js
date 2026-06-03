@@ -12,7 +12,6 @@ export default async function handler(req, res) {
   const id = segments[0] ? parseInt(segments[0]) : null
 
   try {
-    // Individual product: /api/products/:id
     if (id && !isNaN(id)) {
       if (req.method === 'GET') {
         const product = await prisma.product.findUnique({ where: { id } })
@@ -37,7 +36,6 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    // List/Create: /api/products
     if (req.method === 'GET') {
       const products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } })
       return res.status(200).json(products)

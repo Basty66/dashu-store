@@ -1,16 +1,14 @@
-import { prisma } from '../lib/config/prisma.js'
-import { resend, ADMIN_EMAIL, FROM_EMAIL } from '../lib/config/resend.js'
+import { prisma } from '../../lib/config/prisma.js'
+import { resend, ADMIN_EMAIL, FROM_EMAIL } from '../../lib/config/resend.js'
 
 function sendEmails(order, lowStockItems, method) {
   const itemsHtml = (order.items || []).map(i =>
     `<tr><td style="padding:8px 0;border-bottom:1px solid #eee">${i.title}</td><td style="padding:8px 0;text-align:center">${i.quantity}</td><td style="padding:8px 0;text-align:right">$${((i.price * i.quantity) * 1000).toLocaleString('es-CL')}</td></tr>`
   ).join('')
-
   const totalFmt = `$${(order.total * 1000).toLocaleString('es-CL')}`
 
   resend.emails.send({
-    from: FROM_EMAIL,
-    to: order.customerEmail,
+    from: FROM_EMAIL, to: order.customerEmail,
     subject: `Compra confirmada — ${order.orderNumber}`,
     html: `<div style="max-width:560px;margin:0 auto;font-family:Inter,sans-serif;color:#0F2038">
       <div style="text-align:center;padding:32px 0;border-bottom:2px solid #0F2038">
@@ -29,64 +27,59 @@ function sendEmails(order, lowStockItems, method) {
       <div style="border-top:1px solid #eee;padding:16px 0;text-align:center;font-size:12px;color:#75777e">DASHU FOR MEN</div></div>`,
   }).catch(() => {})
 
-  let adminExtra = ''
   if (lowStockItems?.length > 0) {
-    adminExtra = `<div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-top:16px">
-      <h4 style="margin:0 0 8px;color:#856404">⚠️ Alerta de Stock Bajo</h4>
-      ${lowStockItems.map(p => `<p style="margin:2px 0;font-size:14px;color:#856404">${p.title} — Stock: ${p.stock}</p>`).join('')}</div>`
+    resend.emails.send({
+      from: FROM_EMAIL, to: ADMIN_EMAIL,
+      subject: `Nueva venta — ${order.orderNumber} — ${totalFmt}`,
+      html: `<div style="max-width:560px;font-family:Inter,sans-serif">
+        <h2>🛒 Nueva venta (${method})</h2>
+        <p><strong>Pedido:</strong> ${order.orderNumber}</p>
+        <p><strong>Cliente:</strong> ${order.customerName} — ${order.customerEmail}</p>
+        <p><strong>Total:</strong> ${totalFmt}</p>
+        <div style="background:#fff3cd;border:1px solid #ffc107;border-radius:8px;padding:16px;margin-top:16px">
+          <h4 style="margin:0 0 8px;color:#856404">⚠️ Alerta de Stock Bajo</h4>
+          ${lowStockItems.map(p => `<p style="margin:2px 0;font-size:14px;color:#856404">${p.title} — Stock: ${p.stock}</p>`).join('')}</div></div>`,
+    }).catch(() => {})
+  } else {
+    resend.emails.send({
+      from: FROM_EMAIL, to: ADMIN_EMAIL,
+      subject: `Nueva venta — ${order.orderNumber} — ${totalFmt}`,
+      html: `<div style="max-width:560px;font-family:Inter,sans-serif">
+        <h2>🛒 Nueva venta (${method})</h2>
+        <p><strong>Pedido:</strong> ${order.orderNumber}</p>
+        <p><strong>Cliente:</strong> ${order.customerName} — ${order.customerEmail}</p>
+        <p><strong>Total:</strong> ${totalFmt}</p></div>`,
+    }).catch(() => {})
   }
-
-  resend.emails.send({
-    from: FROM_EMAIL,
-    to: ADMIN_EMAIL,
-    subject: `Nueva venta — ${order.orderNumber} — ${totalFmt}`,
-    html: `<div style="max-width:560px;font-family:Inter,sans-serif">
-      <h2>🛒 Nueva venta (${method})</h2>
-      <p><strong>Pedido:</strong> ${order.orderNumber}</p>
-      <p><strong>Cliente:</strong> ${order.customerName} — ${order.customerEmail}</p>
-      <p><strong>Total:</strong> ${totalFmt}</p>${adminExtra}</div>`,
-  }).catch(() => {})
 }
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
   const { pathname } = new URL(req.url, 'http://localhost')
   const segment = pathname.replace(/^\/api\/webhooks\/?/, '').split('/')[0]
 
   if (req.method === 'OPTIONS') return res.status(200).end()
 
-  // Webpay Plus return (GET) — handles redirect from Transbank
+  // Webpay Plus return (GET redirect from Transbank)
   if (segment === 'webpay' && req.method === 'GET') {
     const { token_ws } = req.query
-    if (!token_ws) {
-      return res.writeHead(302, { Location: '/checkout?error=missing_token' }).end()
-    }
+    if (!token_ws) return res.writeHead(302, { Location: '/checkout?error=missing_token' }).end()
 
     try {
-      const WEBPAY_URL = process.env.WEBPAY_ENVIRONMENT === 'production'
-        ? 'https://webpay3g.transbank.cl'
-        : 'https://webpay3gint.transbank.cl'
-
+      const WEBPAY_URL = process.env.WEBPAY_ENVIRONMENT === 'production' ? 'https://webpay3g.transbank.cl' : 'https://webpay3gint.transbank.cl'
       const auth = Buffer.from(`${process.env.WEBPAY_COMMERCE_CODE}:${process.env.WEBPAY_API_KEY}`).toString('base64')
-      const confirmRes = await fetch(`${WEBPAY_URL}/rswebpaytransaction/api/webpay/v1.2/transactions/${token_ws}`, {
-        headers: { Authorization: `Basic ${auth}` },
-      })
+      const confirmRes = await fetch(`${WEBPAY_URL}/rswebpaytransaction/api/webpay/v1.2/transactions/${token_ws}`, { headers: { Authorization: `Basic ${auth}` } })
       const data = await confirmRes.json()
-
       if (data.status !== 'AUTHORIZED') {
         await prisma.order.updateMany({ where: { paymentId: token_ws }, data: { status: 'Rechazado' } })
         return res.writeHead(302, { Location: '/checkout?error=rejected' }).end()
       }
-
       const order = await prisma.order.findFirst({ where: { paymentId: token_ws }, include: { items: true } })
       if (!order) return res.writeHead(302, { Location: '/checkout?error=not_found' }).end()
 
-      if (order.couponCode) {
-        await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
-      }
+      if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
 
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
         const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada' }, include: { items: true } })
@@ -101,7 +94,6 @@ export default async function handler(req, res) {
         }
         return [updated, lowStock]
       })
-
       sendEmails(order, lowStockItems, 'Webpay Plus')
       return res.writeHead(302, { Location: `/order/${order.orderNumber}?success=true` }).end()
     } catch (error) {
@@ -110,27 +102,20 @@ export default async function handler(req, res) {
     }
   }
 
-  // Mercado Pago webhook (POST)
+  // Mercado Pago webhook
   if (segment === 'mercadopago' && req.method === 'POST') {
     try {
       const { action, data } = req.body
       if (action !== 'payment.created' && action !== 'payment.updated') return res.status(200).end()
-
       const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${data.id}`, {
         headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
       })
       const payment = await mpRes.json()
       if (payment.status !== 'approved') return res.status(200).end()
-
-      const order = await prisma.order.findFirst({
-        where: { orderNumber: payment.external_reference },
-        include: { items: true },
-      })
+      const order = await prisma.order.findFirst({ where: { orderNumber: payment.external_reference }, include: { items: true } })
       if (!order || order.status === 'Pagada') return res.status(200).end()
 
-      if (order.couponCode) {
-        await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
-      }
+      if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
 
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
         const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada', paymentId: String(data.id) }, include: { items: true } })
@@ -145,19 +130,14 @@ export default async function handler(req, res) {
         }
         return [updated, lowStock]
       })
-
       sendEmails(order, lowStockItems, 'Mercado Pago')
       return res.status(200).json({ ok: true })
     } catch (error) {
       try {
         if (req.body?.data?.id) {
-          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${req.body.data.id}`, {
-            headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
-          })
+          const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${req.body.data.id}`, { headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` } })
           const payment = await mpRes.json()
-          if (payment.external_reference) {
-            await prisma.order.updateMany({ where: { orderNumber: payment.external_reference }, data: { status: 'Rechazado' } })
-          }
+          if (payment.external_reference) await prisma.order.updateMany({ where: { orderNumber: payment.external_reference }, data: { status: 'Rechazado' } })
         }
       } catch {}
       return res.status(200).json({ ok: false })

@@ -1,14 +1,10 @@
-import { prisma } from '../lib/config/prisma.js'
-import { requireAdmin, generateToken } from '../lib/config/auth.js'
+import { prisma } from '../../lib/config/prisma.js'
+import { requireAdmin, generateToken } from '../../lib/config/auth.js'
 
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS')
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-}
-
-function getId(req) {
-  return parseInt(req.query.id)
 }
 
 export default async function handler(req, res) {
@@ -31,11 +27,9 @@ export default async function handler(req, res) {
 
     if (!requireAdmin(req, res)) return
 
-    // Admin coupon validation: /api/admin/coupons/:id
+    // /api/admin/coupons/:id
     if (segments[0] === 'coupons') {
       const id = segments[1] ? parseInt(segments[1]) : null
-      req.query.id = id
-
       if (id && !isNaN(id)) {
         if (req.method === 'PATCH') {
           const allowed = ['value', 'minTotal', 'maxUses', 'expiresAt', 'isActive', 'type']
@@ -57,7 +51,6 @@ export default async function handler(req, res) {
         }
         return res.status(405).json({ error: 'Method not allowed' })
       }
-
       if (req.method === 'GET') {
         const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } })
         return res.status(200).json(coupons)
@@ -75,11 +68,9 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    // Admin orders: /api/admin/orders/:id
+    // /api/admin/orders/:id
     if (segments[0] === 'orders') {
       const id = segments[1] ? parseInt(segments[1]) : null
-      req.query.id = id
-
       if (id && !isNaN(id) && req.method === 'PATCH') {
         const allowed = ['status']
         const data = {}
@@ -89,22 +80,16 @@ export default async function handler(req, res) {
         const order = await prisma.order.update({ where: { id }, data })
         return res.status(200).json(order)
       }
-
       if (req.method === 'GET') {
-        const orders = await prisma.order.findMany({
-          include: { items: true },
-          orderBy: { createdAt: 'desc' },
-        })
+        const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'desc' } })
         return res.status(200).json(orders)
       }
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
-    // Admin reviews: /api/admin/reviews/:id
+    // /api/admin/reviews/:id
     if (segments[0] === 'reviews') {
       const id = segments[1] ? parseInt(segments[1]) : null
-      req.query.id = id
-
       if (id && !isNaN(id)) {
         if (req.method === 'PATCH') {
           const { isApproved } = req.body
@@ -120,7 +105,6 @@ export default async function handler(req, res) {
         }
         return res.status(405).json({ error: 'Method not allowed' })
       }
-
       if (req.method === 'GET') {
         const reviews = await prisma.review.findMany({ orderBy: { createdAt: 'desc' } })
         return res.status(200).json(reviews)
