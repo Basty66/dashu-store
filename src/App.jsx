@@ -11,6 +11,10 @@ import Checkout from './pages/Checkout'
 import OrderTracking from './pages/OrderTracking'
 import AdminLogin from './pages/AdminLogin'
 import AdminDashboard from './pages/AdminDashboard'
+import Terms from './pages/Terms'
+import Privacy from './pages/Privacy'
+import Returns from './pages/Returns'
+import Contact from './pages/Contact'
 import { Home as HomeIcon } from 'lucide-react'
 
 function PageTransition({ children }) {
@@ -51,6 +55,10 @@ export default function App() {
               <Route path="/tracking" element={<OrderTracking />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/terminos" element={<Terms />} />
+              <Route path="/privacidad" element={<Privacy />} />
+              <Route path="/devoluciones" element={<Returns />} />
+              <Route path="/contacto" element={<Contact />} />
               <Route path="*" element={
                 <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">

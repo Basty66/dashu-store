@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 
 export default function Footer() {
   const [clickCount, setClickCount] = useState(0)
@@ -21,7 +21,13 @@ export default function Footer() {
         <button onClick={handleLogoClick} className="h-md text-lg text-white/80 tracking-tight cursor-pointer hover:text-white transition-colors">
           DASHU FOR MEN
         </button>
-        <span className="text-sm text-white/40" style={{ fontFamily: 'Inter, sans-serif' }}>© {new Date().getFullYear()} DASHU FOR MEN. All Rights Reserved.</span>
+        <div className="flex flex-wrap items-center gap-4 text-xs text-white/40">
+          <Link to="/contacto" className="hover:text-white transition-colors">Contacto</Link>
+          <Link to="/terminos" className="hover:text-white transition-colors">Términos</Link>
+          <Link to="/privacidad" className="hover:text-white transition-colors">Privacidad</Link>
+          <Link to="/devoluciones" className="hover:text-white transition-colors">Devoluciones</Link>
+        </div>
+        <span className="text-sm text-white/40" style={{ fontFamily: 'Inter, sans-serif' }}>© {new Date().getFullYear()} DASHU. All Rights Reserved.</span>
       </div>
     </footer>
   )

@@ -112,6 +112,20 @@ export default async function handler(req, res) {
       return res.status(405).json({ error: 'Method not allowed' })
     }
 
+    // /api/admin/messages
+    if (segments[0] === 'messages') {
+      const id = segments[1] ? parseInt(segments[1]) : null
+      if (id && !isNaN(id) && req.method === 'PATCH') {
+        const msg = await prisma.contactMessage.update({ where: { id }, data: { read: true } })
+        return res.status(200).json(msg)
+      }
+      if (req.method === 'GET') {
+        const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } })
+        return res.status(200).json(messages)
+      }
+      return res.status(405).json({ error: 'Method not allowed' })
+    }
+
     return res.status(404).json({ error: 'Not found' })
   } catch (error) {
     return res.status(500).json({ error: error.message })

@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react'
-import { Link, useLocation } from 'react-router-dom'
+import { useState, useEffect, useRef } from 'react'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
-import { ShoppingBag, Menu, X } from 'lucide-react'
+import { ShoppingBag, Menu, X, Search } from 'lucide-react'
 import { useCart } from '../context/CartContext'
 
 const links = [
@@ -13,7 +13,11 @@ export default function Navbar() {
   const { totalItems, setIsOpen } = useCart()
   const [scrolled, setScrolled] = useState(false)
   const [menuOpen, setMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [searchOpen, setSearchOpen] = useState(false)
+  const searchRef = useRef(null)
   const location = useLocation()
+  const navigate = useNavigate()
 
   useEffect(() => {
     setMenuOpen(false)
@@ -24,6 +28,33 @@ export default function Navbar() {
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
+
+  useEffect(() => {
+    setSearchOpen(false)
+    setSearchQuery('')
+  }, [location.pathname])
+
+  useEffect(() => {
+    if (searchOpen && searchRef.current) searchRef.current.focus()
+  }, [searchOpen])
+
+  useEffect(() => {
+    const onKey = (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key === 'k') { e.preventDefault(); setSearchOpen(s => !s) }
+      if (e.key === 'Escape') setSearchOpen(false)
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [])
+
+  const handleSearch = (e) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      navigate(`/?q=${encodeURIComponent(searchQuery.trim())}`)
+      setSearchOpen(false)
+      setSearchQuery('')
+    }
+  }
 
   const isActive = (path) => location.pathname === path
 
@@ -58,6 +89,23 @@ export default function Navbar() {
           </div>
 
           <div className="flex items-center gap-1">
+            <form onSubmit={handleSearch} className="relative">
+              <motion.button type="button" onClick={() => setSearchOpen(!searchOpen)} title="Buscar (Ctrl+K)"
+                className="p-3 rounded-lg hover:bg-navy/5 transition-colors"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Search size={18} strokeWidth={1.5} className="text-stone" />
+              </motion.button>
+              <AnimatePresence>
+                {searchOpen && (
+                  <motion.div initial={{ opacity: 0, y: -8, scale: 0.96 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -8, scale: 0.96 }}
+                    transition={{ duration: 0.15 }} className="absolute right-0 top-full mt-2 z-50">
+                    <input ref={searchRef} type="text" value={searchQuery} onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Buscar productos..." className="w-64 px-4 py-2.5 rounded-xl border border-navy/10 bg-white text-sm text-navy placeholder:text-outline-v focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 shadow-lg"
+                      onBlur={() => setTimeout(() => setSearchOpen(false), 200)} />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </form>
               <motion.button onClick={() => setIsOpen(true)} data-cart-target
               className="relative p-3 rounded-lg hover:bg-navy/5 transition-colors"
               whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>

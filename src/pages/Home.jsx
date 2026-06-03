@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { motion, useScroll, useTransform, useMotionValue, useSpring } from 'framer-motion'
 import { clp } from '../lib/format'
 import { Shield, Zap, Leaf, Droplets, ArrowRight, ChevronDown, Star, MessageSquare, ExternalLink } from 'lucide-react'
@@ -54,10 +55,13 @@ export default function Home() {
   const { addItem, totalItems } = useCart()
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
+  const [selectedCategory, setSelectedCategory] = useState('')
   const [reviews, setReviews] = useState([])
   const [form, setForm] = useState({ customerName: '', rating: 5, comment: '' })
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
+  const [searchParams] = useSearchParams()
+  const searchQ = searchParams.get('q') || ''
 
   useEffect(() => {
     fetch('/api/products')
@@ -70,6 +74,13 @@ export default function Home() {
       .then(data => { if (Array.isArray(data)) setReviews(data) })
       .catch(() => {})
   }, [])
+
+  const categories = [...new Set(products.map(p => p.category).filter(Boolean))]
+  const filteredProducts = products.filter(p => {
+    const matchCategory = !selectedCategory || p.category === selectedCategory
+    const matchSearch = !searchQ || p.title.toLowerCase().includes(searchQ.toLowerCase())
+    return matchCategory && matchSearch
+  })
 
   function handleSubmit(e) {
     e.preventDefault()
@@ -201,18 +212,37 @@ export default function Home() {
                 </div>
               ))}
             </div>
-          ) : products.length === 0 ? (
-            <div className="text-center py-12">
-              <p className="text-sm text-stone mb-2">No hay productos disponibles aún.</p>
-              <p className="text-xs text-outline-v">Agrega productos desde el panel de administración.</p>
-            </div>
           ) : (
-            <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
-              variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }}>
-              {products.map(p => (
-                <motion.div key={p.id} variants={itemVariants}><ProductCard product={p} /></motion.div>
-              ))}
-            </motion.div>
+            <>
+              {categories.length > 0 && (
+                <motion.div className="flex flex-wrap gap-2 mb-8 justify-center"
+                  initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
+                  <button onClick={() => setSelectedCategory('')}
+                    className={`pill text-xs px-4 py-1.5 rounded-full transition-all ${!selectedCategory ? 'bg-navy text-white' : 'bg-navy/5 text-navy hover:bg-navy/10'}`}>
+                    Todas
+                  </button>
+                  {categories.map(c => (
+                    <button key={c} onClick={() => setSelectedCategory(c)}
+                      className={`pill text-xs px-4 py-1.5 rounded-full capitalize transition-all ${selectedCategory === c ? 'bg-navy text-white' : 'bg-navy/5 text-navy hover:bg-navy/10'}`}>
+                      {c === 'alisado' ? 'Alisado' : c === 'cuidado' ? 'Cuidado Capilar' : c === 'barba' ? 'Barba' : c === 'rostro' ? 'Rostro' : c}
+                    </button>
+                  ))}
+                </motion.div>
+              )}
+              {filteredProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <p className="text-sm text-stone mb-2">No se encontraron productos.</p>
+                  <p className="text-xs text-outline-v">Intenta con otro filtro o búsqueda.</p>
+                </div>
+              ) : (
+                <motion.div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6"
+                  variants={containerVariants} initial="hidden" whileInView="visible" viewport={{ once: true, margin: '-50px' }}>
+                  {filteredProducts.map(p => (
+                    <motion.div key={p.id} variants={itemVariants}><ProductCard product={p} /></motion.div>
+                  ))}
+                </motion.div>
+              )}
+            </>
           )}
         </div>
       </section>

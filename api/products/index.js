@@ -20,7 +20,7 @@ export default async function handler(req, res) {
       }
       if (req.method === 'PATCH') {
         if (!requireAdmin(req, res)) return
-        const allowed = ['title', 'description', 'price', 'offerPrice', 'stock', 'images']
+        const allowed = ['title', 'description', 'category', 'price', 'offerPrice', 'stock', 'images']
         const data = {}
         for (const k of allowed) {
           if (req.body[k] !== undefined) data[k] = k === 'price' || k === 'offerPrice' || k === 'stock' ? Number(req.body[k]) : req.body[k]
@@ -37,15 +37,17 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'GET') {
-      const products = await prisma.product.findMany({ orderBy: { createdAt: 'desc' } })
+      const { category } = req.query
+      const where = category ? { category } : {}
+      const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } })
       return res.status(200).json(products)
     }
     if (req.method === 'POST') {
       if (!requireAdmin(req, res)) return
-      const { title, description, price, offerPrice, stock, images } = req.body
+      const { title, description, category, price, offerPrice, stock, images } = req.body
       if (!title || !description || !price) return res.status(400).json({ error: 'Faltan campos requeridos' })
       const product = await prisma.product.create({
-        data: { title, description, price: Number(price), offerPrice: offerPrice ? Number(offerPrice) : null, stock: Number(stock || 0), images: images || [] }
+        data: { title, description, category: category || 'alisado', price: Number(price), offerPrice: offerPrice ? Number(offerPrice) : null, stock: Number(stock || 0), images: images || [] }
       })
       return res.status(201).json(product)
     }

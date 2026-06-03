@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   const [imageInput, setImageInput] = useState('')
   const [uploadingImage, setUploadingImage] = useState(false)
   const fileInputRef = useRef(null)
-  const [form, setForm] = useState({ title: '', description: '', price: '', offerPrice: '', stock: '0', images: [] })
+  const [form, setForm] = useState({ title: '', description: '', category: 'alisado', price: '', offerPrice: '', stock: '0', images: [] })
   const [coupons, setCoupons] = useState([])
   const [loadingCoupons, setLoadingCoupons] = useState(true)
   const [showCouponModal, setShowCouponModal] = useState(false)
@@ -84,6 +84,8 @@ export default function AdminDashboard() {
   const [couponForm, setCouponForm] = useState({ code: '', type: 'percentage', value: '', minTotal: '0', maxUses: '', expiresAt: '' })
   const [reviews, setReviews] = useState([])
   const [loadingReviews, setLoadingReviews] = useState(false)
+  const [messages, setMessages] = useState([])
+  const [loadingMessages, setLoadingMessages] = useState(false)
 
   useEffect(() => {
     localStorage.setItem('dashu_viewed_sales', JSON.stringify(viewedSales))
@@ -129,6 +131,28 @@ export default function AdminDashboard() {
     fetchReviews()
   }, [authenticated, tab])
 
+  const fetchMessages = async () => {
+    setLoadingMessages(true)
+    try {
+      const r = await authFetch('/api/admin/messages')
+      const data = await r.json()
+      if (Array.isArray(data)) setMessages(data)
+    } catch {}
+    setLoadingMessages(false)
+  }
+
+  const markRead = async (id) => {
+    try {
+      await authFetch(`/api/admin/messages/${id}`, { method: 'PATCH' })
+      setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m))
+    } catch {}
+  }
+
+  useEffect(() => {
+    if (!authenticated || tab !== 'messages') return
+    fetchMessages()
+  }, [authenticated, tab])
+
   const approveReview = async (id, isApproved) => {
     try { await authFetch(`/api/admin/reviews/${id}`, { method: 'PATCH', body: JSON.stringify({ isApproved }) }); fetchReviews(); showToast('Reseña actualizada') } catch {}
   }
@@ -161,9 +185,9 @@ export default function AdminDashboard() {
     try { await authFetch(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({ status }) }); setOrders(orders.map(o => o.id === id ? { ...o, status } : o)); showToast('Estado actualizado') } catch {}
   }
 
-  const openNewProduct = () => { setEditingProduct(null); setForm({ title: '', description: '', price: '', offerPrice: '', stock: '0', images: [] }); setImageInput(''); setShowProductModal(true) }
+  const openNewProduct = () => { setEditingProduct(null); setForm({ title: '', description: '', category: 'alisado', price: '', offerPrice: '', stock: '0', images: [] }); setImageInput(''); setShowProductModal(true) }
 
-  const openEditProduct = (p) => { setEditingProduct(p); setForm({ title: p.title, description: p.description, price: String(p.price), offerPrice: p.offerPrice ? String(p.offerPrice) : '', stock: String(p.stock), images: [...p.images] }); setImageInput(''); setShowProductModal(true) }
+  const openEditProduct = (p) => { setEditingProduct(p); setForm({ title: p.title, description: p.description, category: p.category || 'alisado', price: String(p.price), offerPrice: p.offerPrice ? String(p.offerPrice) : '', stock: String(p.stock), images: [...p.images] }); setImageInput(''); setShowProductModal(true) }
 
   const addImage = () => { if (imageInput.trim() && !form.images.includes(imageInput.trim())) { setForm({ ...form, images: [...form.images, imageInput.trim()] }); setImageInput('') } }
 
@@ -191,7 +215,7 @@ export default function AdminDashboard() {
     if (!form.title || !form.description || !form.price) return
     setSaving(true)
     try {
-      const body = { ...form, price: Number(form.price), offerPrice: form.offerPrice ? Number(form.offerPrice) : null, stock: Number(form.stock) }
+      const body = { ...form, category: form.category || 'alisado', price: Number(form.price), offerPrice: form.offerPrice ? Number(form.offerPrice) : null, stock: Number(form.stock) }
       if (editingProduct) {
         await fetch(`/api/products/${editingProduct.id}`, { method: 'PATCH', headers: authHeaders(), body: JSON.stringify(body) })
         showToast('Producto actualizado')
@@ -315,13 +339,13 @@ export default function AdminDashboard() {
         </motion.div>
 
         <div className="flex gap-1 mb-8 overflow-x-auto pb-1 flex-nowrap">
-          {['ventas', 'orders', 'products', 'coupons', 'reviews'].map((t, i) => (
+          {['ventas', 'orders', 'products', 'coupons', 'reviews', 'messages'].map((t, i) => (
             <motion.button key={t} onClick={() => setTab(t)}
               initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 + i * 0.08 }}
                className={`px-4 md:px-6 py-2.5 rounded-full text-sm font-medium transition-all duration-300 relative whitespace-nowrap ${
                 tab === t ? 'bg-navy text-cream shadow-md glow-navy' : 'text-stone hover:text-navy hover:bg-navy/5'
               }`}>
-               {t === 'ventas' ? 'Ventas' : t === 'orders' ? 'Pedidos' : t === 'products' ? 'Productos' : t === 'coupons' ? 'Cupones' : 'Reseñas'}
+               {t === 'ventas' ? 'Ventas' : t === 'orders' ? 'Pedidos' : t === 'products' ? 'Productos' : t === 'coupons' ? 'Cupones' : t === 'reviews' ? 'Reseñas' : 'Mensajes'}
               {t === 'ventas' && newSalesCount > 0 && (
                   <motion.span initial={{ scale: 0 }} animate={{ scale: 1 }}
                   className="absolute -top-1 -right-1 w-5 h-5 bg-red-500 text-white text-xs rounded-full flex items-center justify-center font-bold">
@@ -539,14 +563,14 @@ export default function AdminDashboard() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-outline-v/20">
-                        {['', 'Producto', 'Precio', 'Oferta', 'Stock', 'Acciones'].map(h => (
+                        {['', 'Producto', 'Categoría', 'Precio', 'Oferta', 'Stock', 'Acciones'].map(h => (
                           <th key={h} className="text-left px-4 py-3.5 text-xs font-medium text-stone">{h}</th>
                         ))}
                       </tr>
                     </thead>
                     <tbody>
                       {loadingProducts ? (
-                        <tr><td colSpan={6} className="p-6">
+                        <tr><td colSpan={7} className="p-6">
                           <div className="space-y-3">
                             {[...Array(4)].map((_, i) => (
                               <div key={i} className="skeleton h-10 w-full" style={{ animationDelay: `${i * 0.1}s` }} />
@@ -554,7 +578,7 @@ export default function AdminDashboard() {
                           </div>
                         </td></tr>
                       ) : products.length === 0 ? (
-                        <tr><td colSpan={6} className="text-center py-16">
+                        <tr><td colSpan={7} className="text-center py-16">
                           <Package size={32} className="mx-auto mb-3 text-outline-v" />
                           <p className="text-stone text-sm">Sin productos. Crea el primero.</p>
                         </td></tr>
@@ -570,6 +594,7 @@ export default function AdminDashboard() {
                               )}
                             </td>
                             <td className="px-4 py-3 font-medium text-navy max-w-[200px] truncate">{p.title}</td>
+                            <td className="px-4 py-3"><span className="text-[11px] px-2 py-0.5 rounded-full bg-navy/5 text-navy">{p.category || 'alisado'}</span></td>
                             <td className="px-4 py-3 text-navy">{clp(p.price)}</td>
                             <td className="px-4 py-3">
                               {p.offerPrice ? (
@@ -675,6 +700,62 @@ export default function AdminDashboard() {
                                   <Trash2 size={14} className="text-red-400" />
                                 </motion.button>
                               </div>
+                            </td>
+                          </motion.tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </motion.div>
+          ) : tab === 'messages' ? (
+            <motion.div key="messages" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} transition={{ duration: 0.3 }}>
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <p className="label text-xs text-stone mb-1">Administrar</p>
+                  <p className="h-md text-navy text-xl">Mensajes de Contacto</p>
+                </div>
+                <MessageSquare size={20} className="text-outline-v" />
+              </div>
+              <div className="glass rounded-xl overflow-hidden shadow-sm">
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b border-outline-v/20">
+                        {['Nombre', 'Email', 'Asunto', 'Mensaje', 'Fecha', 'Estado'].map(h => (
+                          <th key={h} className="text-left px-4 py-3.5 text-xs font-medium text-stone">{h}</th>
+                        ))}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {loadingMessages ? (
+                        <tr><td colSpan={6} className="p-6">
+                          <div className="space-y-3">
+                            {[...Array(3)].map((_, i) => (
+                              <div key={i} className="skeleton h-10 w-full" style={{ animationDelay: `${i * 0.1}s` }} />
+                            ))}
+                          </div>
+                        </td></tr>
+                      ) : messages.length === 0 ? (
+                        <tr><td colSpan={6} className="text-center py-16">
+                          <MessageSquare size={32} className="mx-auto mb-3 text-outline-v" />
+                          <p className="text-stone text-sm">Sin mensajes aún</p>
+                        </td></tr>
+                      ) : (
+                        messages.map((m, idx) => (
+                          <motion.tr key={m.id} custom={idx} variants={rowVariants} initial="hidden" animate="visible"
+                            onClick={() => !m.read && markRead(m.id)}
+                            className={`border-b border-outline-v/10 hover:bg-white/50 transition-colors cursor-pointer ${!m.read ? 'bg-amber-50/30 font-medium' : ''}`}>
+                            <td className="px-4 py-3 text-navy">{m.name}</td>
+                            <td className="px-4 py-3 text-stone"><a href={`mailto:${m.email}`} className="hover:text-gold transition-colors">{m.email}</a></td>
+                            <td className="px-4 py-3 text-stone">{m.subject || '—'}</td>
+                            <td className="px-4 py-3 text-stone max-w-[250px] truncate">{m.message}</td>
+                            <td className="px-4 py-3 text-xs text-outline-v">{m.createdAt ? new Date(m.createdAt).toLocaleDateString('es-CL') : '—'}</td>
+                            <td className="px-4 py-3">
+                              <span className={`pill text-[11px] ${m.read ? 'bg-green-50 text-green-700' : 'bg-amber-50 text-amber-700'}`}>
+                                {m.read ? 'Leído' : 'Nuevo'}
+                              </span>
                             </td>
                           </motion.tr>
                         ))
@@ -857,6 +938,16 @@ export default function AdminDashboard() {
                   <label className="input-label"><AlignLeft size={12} className="inline mr-1" />Descripción</label>
                   <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })}
                     className="input-minimal w-full" placeholder="Descripción del producto..." />
+                </motion.div>
+                <motion.div variants={itemVariants}>
+                  <label className="input-label"><Tag size={12} className="inline mr-1" />Categoría</label>
+                  <select value={form.category} onChange={e => setForm({ ...form, category: e.target.value })}
+                    className="input-minimal w-full">
+                    <option value="alisado">Alisado</option>
+                    <option value="cuidado">Cuidado Capilar</option>
+                    <option value="barba">Barba</option>
+                    <option value="rostro">Rostro</option>
+                  </select>
                 </motion.div>
                 <motion.div variants={itemVariants} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
