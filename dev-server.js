@@ -54,7 +54,11 @@ async function findHandler(segments, query) {
   let handler = await loadHandler(segments)
   if (handler) return handler
 
-  if (segments.length >= 2) {
+  if (segments.length >= 1) {
+    // Try consolidated parent file: e.g. api/admin.js for /api/admin/orders
+    handler = await loadHandler([segments[0]])
+    if (handler) return handler
+
     const parentSegments = segments.slice(0, -1)
     // Check for dynamic param files like [id].js in parent dir
     const parentDir = path.join(__dirname, 'api', ...parentSegments)
