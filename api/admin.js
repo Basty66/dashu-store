@@ -1,5 +1,5 @@
-import { prisma } from '../../lib/config/prisma.js'
-import { requireAdmin, generateToken } from '../../lib/config/auth.js'
+import { prisma } from '../lib/config/prisma.js'
+import { requireAdmin, generateToken } from '../lib/config/auth.js'
 
 function setCors(res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
