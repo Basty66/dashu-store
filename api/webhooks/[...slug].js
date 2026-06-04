@@ -53,6 +53,25 @@ function sendEmails(order, lowStockItems, method) {
   }
 }
 
+async function revertStock(tx, items) {
+  for (const item of items) {
+    const product = await tx.product.findUnique({ where: { id: item.productId } })
+    if (!product) continue
+    await tx.product.update({ where: { id: item.productId }, data: { stock: product.stock + item.quantity } })
+  }
+}
+
+async function confirmOrder(tx, order) {
+  const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada' }, include: { items: true } })
+  const lowStock = []
+  for (const item of order.items) {
+    const product = await tx.product.findUnique({ where: { id: item.productId } })
+    if (!product) continue
+    if (product.stock < 3) lowStock.push({ title: product.title, stock: product.stock })
+  }
+  return [updated, lowStock]
+}
+
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*')
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
@@ -73,31 +92,36 @@ export default async function handler(req, res) {
       const confirmRes = await fetch(`${WEBPAY_URL}/rswebpaytransaction/api/webpay/v1.2/transactions/${token_ws}`, { headers: { Authorization: `Basic ${auth}` } })
       const data = await confirmRes.json()
       if (data.status !== 'AUTHORIZED') {
-        await prisma.order.updateMany({ where: { paymentId: token_ws }, data: { status: 'Rechazado' } })
+        const failedOrder = await prisma.order.findFirst({ where: { paymentId: token_ws }, include: { items: true } })
+        if (failedOrder && failedOrder.status !== 'Pagada') {
+          await prisma.$transaction(async (tx) => {
+            await revertStock(tx, failedOrder.items)
+            await tx.order.update({ where: { id: failedOrder.id }, data: { status: 'Rechazado' } })
+          })
+        }
         return res.writeHead(302, { Location: '/checkout?error=rejected' }).end()
       }
       const order = await prisma.order.findFirst({ where: { paymentId: token_ws }, include: { items: true } })
       if (!order) return res.writeHead(302, { Location: '/checkout?error=not_found' }).end()
+      if (order.status === 'Pagada') return res.writeHead(302, { Location: `/order/${order.orderNumber}?success=true` }).end()
 
       if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
 
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
-        const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada' }, include: { items: true } })
-        const lowStock = []
-        for (const item of order.items) {
-          const product = await tx.product.findUnique({ where: { id: item.productId } })
-          if (!product) continue
-          const newStock = product.stock - item.quantity
-          if (newStock < 0) throw new Error(`Stock insuficiente para "${product.title}"`)
-          await tx.product.update({ where: { id: item.productId }, data: { stock: newStock } })
-          if (newStock < 3) lowStock.push({ title: product.title, stock: newStock })
-        }
-        return [updated, lowStock]
+        return await confirmOrder(tx, order)
       })
       sendEmails(order, lowStockItems, 'Webpay Plus')
       return res.writeHead(302, { Location: `/order/${order.orderNumber}?success=true` }).end()
     } catch (error) {
-      try { await prisma.order.updateMany({ where: { paymentId: token_ws }, data: { status: 'Rechazado' } }) } catch {}
+      try {
+        const failedOrder = await prisma.order.findFirst({ where: { paymentId: token_ws }, include: { items: true } })
+        if (failedOrder && failedOrder.status !== 'Pagada') {
+          await prisma.$transaction(async (tx) => {
+            await revertStock(tx, failedOrder.items)
+            await tx.order.update({ where: { id: failedOrder.id }, data: { status: 'Rechazado' } })
+          })
+        }
+      } catch {}
       return res.writeHead(302, { Location: `/checkout?error=${encodeURIComponent(error.message)}` }).end()
     }
   }
@@ -111,24 +135,21 @@ export default async function handler(req, res) {
         headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` },
       })
       const payment = await mpRes.json()
-      if (payment.status !== 'approved') return res.status(200).end()
       const order = await prisma.order.findFirst({ where: { orderNumber: payment.external_reference }, include: { items: true } })
       if (!order || order.status === 'Pagada') return res.status(200).end()
+
+      if (payment.status !== 'approved') {
+        await prisma.$transaction(async (tx) => {
+          await revertStock(tx, order.items)
+          await tx.order.update({ where: { id: order.id }, data: { status: 'Rechazado' } })
+        })
+        return res.status(200).end()
+      }
 
       if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
 
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
-        const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada', paymentId: String(data.id) }, include: { items: true } })
-        const lowStock = []
-        for (const item of order.items) {
-          const product = await tx.product.findUnique({ where: { id: item.productId } })
-          if (!product) continue
-          const newStock = product.stock - item.quantity
-          if (newStock < 0) throw new Error(`Stock insuficiente para "${product.title}"`)
-          await tx.product.update({ where: { id: item.productId }, data: { stock: newStock } })
-          if (newStock < 3) lowStock.push({ title: product.title, stock: newStock })
-        }
-        return [updated, lowStock]
+        return await confirmOrder(tx, order)
       })
       sendEmails(order, lowStockItems, 'Mercado Pago')
       return res.status(200).json({ ok: true })
@@ -137,7 +158,15 @@ export default async function handler(req, res) {
         if (req.body?.data?.id) {
           const mpRes = await fetch(`https://api.mercadopago.com/v1/payments/${req.body.data.id}`, { headers: { Authorization: `Bearer ${process.env.MERCADO_PAGO_ACCESS_TOKEN}` } })
           const payment = await mpRes.json()
-          if (payment.external_reference) await prisma.order.updateMany({ where: { orderNumber: payment.external_reference }, data: { status: 'Rechazado' } })
+          if (payment.external_reference) {
+            const failedOrder = await prisma.order.findFirst({ where: { orderNumber: payment.external_reference }, include: { items: true } })
+            if (failedOrder && failedOrder.status !== 'Pagada') {
+              await prisma.$transaction(async (tx) => {
+                await revertStock(tx, failedOrder.items)
+                await tx.order.update({ where: { id: failedOrder.id }, data: { status: 'Rechazado' } })
+              })
+            }
+          }
         }
       } catch {}
       return res.status(200).json({ ok: false })

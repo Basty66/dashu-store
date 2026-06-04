@@ -13,6 +13,14 @@ function getBaseUrl(req) {
   return `${process.env.VERCEL_PROTOCOL || 'https'}://${process.env.VERCEL_URL || req.headers.host || 'localhost:5173'}`
 }
 
+async function revertStock(tx, items) {
+  for (const item of items) {
+    const product = await tx.product.findUnique({ where: { id: item.id } })
+    if (!product) continue
+    await tx.product.update({ where: { id: item.id }, data: { stock: product.stock + item.quantity } })
+  }
+}
+
 export default async function handler(req, res) {
   setCors(res)
   if (req.method === 'OPTIONS') return res.status(200).end()
@@ -32,8 +40,12 @@ export default async function handler(req, res) {
     }
   }
 
+  let order, orderItems
+
   try {
-    const { items, customer, couponCode } = req.body
+    const body = req.body
+    orderItems = body.items
+    const { items, customer, couponCode } = body
 
     if (!items?.length || !customer?.name || !customer?.email) {
       return res.status(400).json({ error: 'Faltan campos requeridos' })
@@ -57,17 +69,27 @@ export default async function handler(req, res) {
     const total = Math.max(subtotal + shipping - discount, 0)
     const orderNumber = `DASHU-${Date.now().toString(36).toUpperCase()}`
 
-    const order = await prisma.order.create({
-      data: {
-        orderNumber, total, discount, shippingCost: shipping,
-        couponCode: couponCode || null,
-        paymentMethod: segment === 'mercadopago' ? 'mercadopago' : 'webpay',
-        customerName: customer.name, customerEmail: customer.email,
-        customerPhone: customer.phone || '', shippingRegion: customer.region || '',
-        shippingCity: customer.city || '', shippingAddress: customer.address || '',
-        notes: customer.notes || '',
-        items: { create: items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price, title: i.title })) },
-      },
+    order = await prisma.$transaction(async (tx) => {
+      for (const item of items) {
+        const product = await tx.product.findUnique({ where: { id: item.id } })
+        if (!product) throw new Error(`Producto ID ${item.id} no encontrado`)
+        const newStock = product.stock - item.quantity
+        if (newStock < 0) throw new Error(`Stock insuficiente para "${product.title}"`)
+        await tx.product.update({ where: { id: item.id }, data: { stock: newStock } })
+      }
+
+      return await tx.order.create({
+        data: {
+          orderNumber, total, discount, shippingCost: shipping,
+          couponCode: couponCode || null,
+          paymentMethod: segment === 'mercadopago' ? 'mercadopago' : 'webpay',
+          customerName: customer.name, customerEmail: customer.email,
+          customerPhone: customer.phone || '', shippingRegion: customer.region || '',
+          shippingCity: customer.city || '', shippingAddress: customer.address || '',
+          notes: customer.notes || '',
+          items: { create: items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price, title: i.title })) },
+        },
+      })
     })
 
     notifyNewOrder(order)
@@ -113,6 +135,12 @@ export default async function handler(req, res) {
     await prisma.order.update({ where: { id: order.id }, data: { paymentId: tbData.token } })
     return res.status(200).json({ url: tbData.url, token: tbData.token, orderNumber })
   } catch (error) {
+    if (order && orderItems?.length) {
+      await prisma.$transaction(async (tx) => {
+        await revertStock(tx, orderItems)
+        await tx.order.update({ where: { id: order.id }, data: { status: 'Error' } })
+      }).catch(() => {})
+    }
     return res.status(500).json({ error: error.message })
   }
 }
