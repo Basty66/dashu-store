@@ -5,6 +5,7 @@ import Navbar from './components/Navbar'
 import Footer from './components/Footer'
 import CartDrawer from './components/CartDrawer'
 import CartFly from './components/CartFly'
+import WhatsAppButton from './components/WhatsAppButton'
 import SplashScreen from './components/SplashScreen'
 import Home from './pages/Home'
 import Checkout from './pages/Checkout'
@@ -15,6 +16,7 @@ import Terms from './pages/Terms'
 import Privacy from './pages/Privacy'
 import Returns from './pages/Returns'
 import Contact from './pages/Contact'
+import ProductDetail from './pages/ProductDetail'
 import { Home as HomeIcon } from 'lucide-react'
 
 function PageTransition({ children }) {
@@ -42,6 +44,7 @@ export default function App() {
       <Navbar />
       <CartDrawer />
       <CartFly />
+      <WhatsAppButton />
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <PageTransition key={location.pathname}>
@@ -59,6 +62,7 @@ export default function App() {
               <Route path="/privacidad" element={<Privacy />} />
               <Route path="/devoluciones" element={<Returns />} />
               <Route path="/contacto" element={<Contact />} />
+              <Route path="/producto/:id" element={<ProductDetail />} />
               <Route path="*" element={
                 <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
                   <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
