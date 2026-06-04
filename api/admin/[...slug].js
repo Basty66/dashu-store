@@ -14,6 +14,10 @@ export default async function handler(req, res) {
   const { pathname } = new URL(req.url, 'http://localhost')
   const segments = pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean)
 
+  if (segments[0] === 'debug') {
+    return res.status(200).json({ url: req.url, pathname, segments, method: req.method, segments0: segments[0], segments1: segments[1] })
+  }
+
   try {
     // POST /api/admin/auth
     if (segments[0] === 'auth' && req.method === 'POST') {
