@@ -15,16 +15,26 @@ function cartReducer(state, action) {
   switch (action.type) {
     case 'ADD_ITEM': {
       const existing = state.find(i => i.id === action.item.id)
+      const stock = action.item.stock ?? 99
       if (existing) {
+        const newQty = Math.min(existing.quantity + 1, stock)
+        if (newQty === existing.quantity) return state
         return state.map(i =>
-          i.id === action.item.id ? { ...i, quantity: Math.min(i.quantity + 1, 99) } : i
+          i.id === action.item.id ? { ...i, quantity: newQty, stock } : { ...i, stock: i.stock ?? 99 }
         )
       }
-      return [...state, { ...action.item, quantity: 1 }]
+      const validStock = Math.min(1, stock)
+      if (validStock < 1) return state
+      return [...state, { ...action.item, quantity: 1, stock }]
     }
-    case 'UPDATE_QUANTITY':
-      if (action.quantity <= 0) return state.filter(i => i.id !== action.id)
-      return state.map(i => (i.id === action.id ? { ...i, quantity: action.quantity } : i))
+    case 'UPDATE_QUANTITY': {
+      const item = state.find(i => i.id === action.id)
+      if (!item) return state
+      const stock = item.stock ?? 99
+      const qty = Math.max(0, Math.min(action.quantity, stock))
+      if (qty <= 0) return state.filter(i => i.id !== action.id)
+      return state.map(i => (i.id === action.id ? { ...i, quantity: qty } : i))
+    }
     case 'REMOVE_ITEM':
       return state.filter(i => i.id !== action.id)
     case 'CLEAR':
@@ -44,9 +54,21 @@ export function CartProvider({ children }) {
   const [isOpen, setIsOpen] = useState(false)
   const [flyItem, setFlyItem] = useState(null)
   const flyTimer = useRef(null)
+  const [stockAlert, setStockAlert] = useState(null)
+  const alertTimer = useRef(null)
 
   const addItem = useCallback((item, sourceRect) => {
-    dispatch({ type: 'ADD_ITEM', item })
+    const existing = items.find(i => i.id === item.id)
+    const stock = item.stock ?? 99
+    const currentQty = existing ? existing.quantity : 0
+    if (currentQty >= stock || stock < 1) {
+      if (alertTimer.current) clearTimeout(alertTimer.current)
+      setStockAlert({ id: item.id, name: item.name || item.title })
+      alertTimer.current = setTimeout(() => setStockAlert(null), 2500)
+      return false
+    }
+
+    dispatch({ type: 'ADD_ITEM', item: { ...item, stock } })
 
     if (sourceRect && item.image) {
       const cartEl = document.querySelector('[data-cart-target]')
@@ -57,7 +79,8 @@ export function CartProvider({ children }) {
         flyTimer.current = setTimeout(() => setFlyItem(null), 700)
       }
     }
-  }, [])
+    return true
+  }, [items])
 
   const updateQuantity = useCallback((id, quantity) => dispatch({ type: 'UPDATE_QUANTITY', id, quantity }), [])
   const removeItem = useCallback((id) => dispatch({ type: 'REMOVE_ITEM', id }), [])
@@ -66,8 +89,14 @@ export function CartProvider({ children }) {
   const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
   const totalItems = items.reduce((s, i) => s + i.quantity, 0)
 
+  const maxQtyFor = useCallback((productId, stock) => {
+    const item = items.find(i => i.id === productId)
+    const inCart = item ? item.quantity : 0
+    return Math.max(0, (stock ?? 99) - inCart)
+  }, [items])
+
   return (
-    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clearCart, subtotal, totalItems, isOpen, setIsOpen, flyItem, setFlyItem }}>
+    <CartContext.Provider value={{ items, addItem, updateQuantity, removeItem, clearCart, subtotal, totalItems, isOpen, setIsOpen, flyItem, setFlyItem, stockAlert, setStockAlert, maxQtyFor }}>
       {children}
     </CartContext.Provider>
   )

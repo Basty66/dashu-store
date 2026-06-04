@@ -7,6 +7,7 @@ import CartDrawer from './components/CartDrawer'
 import CartFly from './components/CartFly'
 import WhatsAppButton from './components/WhatsAppButton'
 import SplashScreen from './components/SplashScreen'
+import { useCart } from './context/CartContext'
 import Home from './pages/Home'
 import Checkout from './pages/Checkout'
 import OrderTracking from './pages/OrderTracking'
@@ -31,6 +32,18 @@ function PageTransition({ children }) {
   )
 }
 
+function StockToast() {
+  const { stockAlert } = useCart()
+  if (!stockAlert) return null
+  return (
+    <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2 }}
+      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-red-600 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-2xl shadow-red-600/20">
+      Stock máximo alcanzado para <strong>{stockAlert.name}</strong>
+    </motion.div>
+  )
+}
+
 export default function App() {
   const [splashDone, setSplashDone] = useState(false)
   const location = useLocation()
@@ -45,6 +58,7 @@ export default function App() {
       <CartDrawer />
       <CartFly />
       <WhatsAppButton />
+      <StockToast />
       <main className="flex-1">
         <AnimatePresence mode="wait">
           <PageTransition key={location.pathname}>

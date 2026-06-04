@@ -37,42 +37,48 @@ export default function CartDrawer() {
                   <p className="text-sm text-stone">Tu carrito está vacío</p>
                 </div>
               ) : (
-                items.map(item => (
-                  <motion.div key={item.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
-                    className="flex gap-4 p-4 bg-white/30 backdrop-blur-sm rounded-lg border border-white/20">
-                    <div className="w-16 h-16 bg-cream/50 rounded overflow-hidden flex-shrink-0 border border-white/10">
-                      {item.image ? (
-                        <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center text-outline-v text-[10px]">IMG</div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-navy">{item.name}</p>
-                      <div className="flex items-center gap-2 mt-2">
+                items.map(item => {
+                  const atMax = item.quantity >= (item.stock ?? 99)
+                  return (
+                    <motion.div key={item.id} layout initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}
+                      className="flex gap-4 p-4 bg-white/30 backdrop-blur-sm rounded-lg border border-white/20">
+                      <div className="w-16 h-16 bg-cream/50 rounded overflow-hidden flex-shrink-0 border border-white/10">
+                        {item.image ? (
+                          <img src={item.image} alt={item.name} className="w-full h-full object-contain" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-outline-v text-[10px]">IMG</div>
+                        )}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium text-navy">{item.name}</p>
+                        <div className="flex items-center gap-2 mt-2">
                           <motion.button onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                          className="w-11 h-11 flex items-center justify-center border border-outline-v/50 rounded hover:bg-white/50 transition-colors"
-                          whileTap={{ scale: 0.9 }}>
-                          <Minus size={14} className="text-stone" />
-                        </motion.button>
-                        <span className="text-xs font-medium w-4 text-center text-navy">{item.quantity}</span>
+                            className="w-11 h-11 flex items-center justify-center border border-outline-v/50 rounded hover:bg-white/50 transition-colors"
+                            whileTap={{ scale: 0.9 }}>
+                            <Minus size={14} className="text-stone" />
+                          </motion.button>
+                          <span className="text-xs font-medium w-4 text-center text-navy">{item.quantity}</span>
                           <motion.button onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                          className="w-11 h-11 flex items-center justify-center border border-outline-v/50 rounded hover:bg-white/50 transition-colors"
-                          whileTap={{ scale: 0.9 }}>
-                          <Plus size={14} className="text-stone" />
+                            className={`w-11 h-11 flex items-center justify-center border rounded transition-colors ${atMax ? 'border-outline-v/20 text-outline-v cursor-not-allowed' : 'border-outline-v/50 hover:bg-white/50'}`}
+                            whileTap={atMax ? undefined : { scale: 0.9 }}>
+                            <Plus size={14} />
+                          </motion.button>
+                        </div>
+                        {atMax && (
+                          <p className="text-[10px] text-red-500 mt-1">Stock máximo</p>
+                        )}
+                      </div>
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-sm font-medium text-navy">{clp(item.price * item.quantity)}</p>
+                        <motion.button onClick={() => removeItem(item.id)}
+                          className="text-xs mt-2 text-outline-v hover:text-stone transition-colors"
+                          whileHover={{ scale: 1.05 }}>
+                          Eliminar
                         </motion.button>
                       </div>
-                    </div>
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-sm font-medium text-navy">{clp(item.price * item.quantity)}</p>
-                      <motion.button onClick={() => removeItem(item.id)}
-                        className="text-xs mt-2 text-outline-v hover:text-stone transition-colors"
-                        whileHover={{ scale: 1.05 }}>
-                        Eliminar
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))
+                    </motion.div>
+                  )
+                })
               )}
             </div>
 

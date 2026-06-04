@@ -7,7 +7,7 @@ import { useCart } from '../context/CartContext'
 
 export default function ProductDetail() {
   const { id } = useParams()
-  const { addItem, updateQuantity } = useCart()
+  const { addItem, stockAlert } = useCart()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
   const [imgIdx, setImgIdx] = useState(0)
@@ -20,6 +20,8 @@ export default function ProductDetail() {
       .catch(() => {})
       .finally(() => setLoading(false))
   }, [id])
+
+  useEffect(() => { setQty(1) }, [id])
 
   if (loading) {
     return (
@@ -122,15 +124,17 @@ export default function ProductDetail() {
             </div>
             <p className="text-sm text-stone leading-relaxed">{product.description}</p>
 
-            <div className="flex items-center gap-3">
-              <div className="flex items-center rounded-xl border border-outline-v/20 bg-white overflow-hidden">
-                <button onClick={() => setQty(q => Math.max(1, q - 1))}
-                  className="px-4 py-2.5 text-navy hover:bg-navy/5 transition-colors text-sm font-medium">−</button>
-                <span className="px-4 py-2.5 text-navy font-medium text-sm min-w-[40px] text-center border-x border-outline-v/10">{qty}</span>
-                <button onClick={() => setQty(q => Math.min(product.stock, q + 1))}
-                  className="px-4 py-2.5 text-navy hover:bg-navy/5 transition-colors text-sm font-medium">+</button>
+            {!outOfStock && (
+              <div className="flex items-center gap-3">
+                <div className="flex items-center rounded-xl border border-outline-v/20 bg-white overflow-hidden">
+                  <button onClick={() => setQty(q => Math.max(1, q - 1))}
+                    className="px-4 py-2.5 text-navy hover:bg-navy/5 transition-colors text-sm font-medium">−</button>
+                  <span className="px-4 py-2.5 text-navy font-medium text-sm min-w-[40px] text-center border-x border-outline-v/10">{qty}</span>
+                  <button onClick={() => setQty(q => Math.min(product.stock, q + 1))}
+                    className="px-4 py-2.5 text-navy hover:bg-navy/5 transition-colors text-sm font-medium">+</button>
+                </div>
               </div>
-            </div>
+            )}
 
             <div className="flex items-center gap-3 text-xs">
               {product.stock > 0 && product.stock < 10 ? (
@@ -145,9 +149,7 @@ export default function ProductDetail() {
             <motion.button onClick={e => {
               if (outOfStock) return
               const rect = e.currentTarget.getBoundingClientRect()
-              addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0] }, rect)
-              if (qty > 1) updateQuantity(product.id, qty)
-              setQty(1)
+              addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0], stock: product.stock }, rect)
             }}
               disabled={outOfStock}
               className={`btn-primary w-full inline-flex items-center justify-center gap-2 ${outOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -155,6 +157,11 @@ export default function ProductDetail() {
               <ShoppingBag size={16} />
               {outOfStock ? 'Agotado' : `Agregar al Carrito · ${clp(product.offerPrice || product.price)}`}
             </motion.button>
+
+            {stockAlert?.id === product.id && (
+              <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+                className="text-xs text-red-600 font-medium text-center">Stock máximo alcanzado en tu carro</motion.p>
+            )}
           </motion.div>
         </div>
       </div>

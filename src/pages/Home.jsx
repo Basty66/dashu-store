@@ -8,7 +8,7 @@ import { useCart } from '../context/CartContext'
 
 const P_IMG = 'https://lh3.googleusercontent.com/aida-public/AB6AXuCx7tL40DbjW5GvbgDJVMNpu2XYaVj5IBcX5JzmK4ndbMaC4tDyw1e_H2kkskVH3X37AAHHqnc6oN1fAXiPsR2Ydi84PWaMqoEn1sUNYqiucVCEpC6K2dA4JcWh2LsTvnttWKw6lxKtDHr2s854Wog4RXDw6H1waPc6Dacdn6-PKR83TTzFocY5xxHkkOVWzY-RrQvtGpSB_cQbdsMBgIYDodlQWq-b7sU8U9ygamoLCnPuFKnDFI6-JHLsMkWjPxEZrKAkD6-MHaA'
 
-const ITEM = { id: 1, name: 'Protein Down Cream', price: 14, image: P_IMG }
+const ITEM = { id: 1, name: 'Protein Down Cream', price: 14, image: P_IMG, stock: 999 }
 
 const steps = [
   { num: '01', title: 'Aplica en cabello seco', desc: 'Con el cepillo, aplica desde la raíz cubriendo el área lateral que quieres domar. El pelo rebelde se impregna con la fórmula coreana.' },

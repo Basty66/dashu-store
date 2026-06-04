@@ -5,7 +5,8 @@ import { useCart } from '../context/CartContext'
 import { clp } from '../lib/format'
 
 export default function ProductCard({ product }) {
-  const { addItem } = useCart()
+  const { addItem, stockAlert } = useCart()
+  const maxed = stockAlert?.id === product.id
 
   return (
     <motion.div whileHover={{ y: -3 }}
@@ -55,14 +56,18 @@ export default function ProductCard({ product }) {
           <motion.button onClick={e => {
             if (product.stock === 0) return
             const rect = e.currentTarget.getBoundingClientRect()
-            addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0] }, rect)
+            addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0], stock: product.stock }, rect)
           }}
             className={`p-3 rounded-full transition-colors ${product.stock === 0 ? 'bg-stone/20 text-stone cursor-not-allowed' : 'bg-navy text-cream hover:bg-gold'}`}
             whileHover={product.stock === 0 ? undefined : { scale: 1.1 }} whileTap={product.stock === 0 ? undefined : { scale: 0.9 }}>
             <ShoppingBag size={14} />
           </motion.button>
         </div>
-        {product.stock < 3 && product.stock > 0 && (
+        {maxed && (
+          <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
+            className="text-[11px] text-red-600 font-medium">Stock máximo alcanzado</motion.p>
+        )}
+        {product.stock < 3 && product.stock > 0 && !maxed && (
           <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }}
             className="text-[11px] text-amber-700 font-medium">Quedan {product.stock} unidades</motion.p>
         )}
