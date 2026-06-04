@@ -45,20 +45,21 @@ export default async function handler(req, res) {
     }
 
     const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
+    const shipping = typeof req.body.shipping === 'number' ? req.body.shipping : 0
 
     let discount = 0
     if (couponCode) {
-      const validated = await validateCoupon(couponCode, subtotal + 4)
+      const validated = await validateCoupon(couponCode, subtotal + shipping)
       if (!validated.valid) return res.status(400).json({ error: validated.error })
       discount = validated.discount
     }
 
-    const total = Math.max(subtotal + 4 - discount, 0)
+    const total = Math.max(subtotal + shipping - discount, 0)
     const orderNumber = `DASHU-${Date.now().toString(36).toUpperCase()}`
 
     const order = await prisma.order.create({
       data: {
-        orderNumber, total, discount,
+        orderNumber, total, discount, shippingCost: shipping,
         couponCode: couponCode || null,
         paymentMethod: segment === 'mercadopago' ? 'mercadopago' : 'webpay',
         customerName: customer.name, customerEmail: customer.email,

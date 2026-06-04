@@ -28,6 +28,7 @@ model Order {
   orderNumber     String      @unique
   status          String      @default("Pendiente")
   total           Int
+  shippingCost    Int         @default(0)
   discount        Int         @default(0)
   couponCode      String?
   paymentMethod   String?

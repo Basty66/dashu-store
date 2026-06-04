@@ -24,6 +24,25 @@ const CHILE_REGIONS = {
   'Magallanes': ['Punta Arenas', 'Puerto Natales', 'Porvenir', 'Puerto Williams', 'Cabo de Hornos', 'Laguna Blanca', 'Río Verde', 'San Gregorio', 'Timaukel', 'Torres del Paine', 'Primavera'],
 }
 
+const SHIPPING_COST = {
+  'Metropolitana de Santiago': 3,
+  'Valparaíso': 3,
+  "O'Higgins": 3,
+  'Maule': 4,
+  'Ñuble': 4,
+  'Biobío': 4,
+  'Coquimbo': 5,
+  'Atacama': 5,
+  'La Araucanía': 5,
+  'Los Ríos': 5,
+  'Antofagasta': 6,
+  'Los Lagos': 6,
+  'Arica y Parinacota': 7,
+  'Tarapacá': 7,
+  'Aysén': 8,
+  'Magallanes': 10,
+}
+
 const itemVariants = {
   hidden: { opacity: 0, y: 16 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
@@ -51,8 +70,8 @@ export default function Checkout() {
   const regions = Object.keys(CHILE_REGIONS)
   const cities = form.region ? CHILE_REGIONS[form.region] : []
   const discount = coupon?.valid ? coupon.discount : 0
-  const SHIPPING = 4
-  const total = subtotal + SHIPPING - discount
+  const shipping = form.region ? (SHIPPING_COST[form.region] || 4) : 0
+  const total = subtotal + shipping - discount
 
   const steps = [
     { icon: ShoppingBag, label: 'Carrito', done: items.length > 0 },
@@ -74,6 +93,7 @@ export default function Checkout() {
           name: form.name, email: form.email, phone: form.phone,
           region: form.region, city: form.city, address: form.address, notes: form.notes,
         },
+        shipping: shipping,
         couponCode: coupon?.code || null,
         discount: discount,
       }
@@ -105,7 +125,7 @@ export default function Checkout() {
     try {
       const r = await fetch('/api/checkout/validate-coupon', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim(), cartTotal: subtotal + SHIPPING }),
+        body: JSON.stringify({ code: couponCode.trim(), cartTotal: subtotal + (form.region ? (SHIPPING_COST[form.region] || 4) : 0) }),
       })
       const data = await r.json()
       if (data.valid) {
@@ -282,7 +302,7 @@ export default function Checkout() {
                       <span className="text-stone flex items-center gap-1">
                         <Truck size={12} /> Envío
                       </span>
-                      <span className="text-navy font-medium">{clp(SHIPPING)}</span>
+                      <span className="text-navy font-medium">{form.region ? clp(shipping) : '—'}</span>
                     </div>
                     <div className="border-t border-outline-v/10 pt-3">
                       <div className="flex gap-2">
