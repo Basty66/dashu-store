@@ -5,6 +5,12 @@
     }
   },
   "rewrites": [
+    { "source": "/api/admin/:path*", "destination": "/api/admin" },
+    { "source": "/api/checkout/:path*", "destination": "/api/checkout/[...slug]" },
+    { "source": "/api/webhooks/:path*", "destination": "/api/webhooks/[...slug]" },
+    { "source": "/api/products/:path*", "destination": "/api/products" },
+    { "source": "/api/reviews/:path*", "destination": "/api/reviews" },
+    { "source": "/api/coupon/:path*", "destination": "/api/coupon/[...slug]" },
     { "source": "/((?!api/).*)", "destination": "/index.html" }
   ]
 }

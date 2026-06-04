@@ -14,10 +14,6 @@ export default async function handler(req, res) {
   const { pathname } = new URL(req.url, 'http://localhost')
   const segments = pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean)
 
-  if (segments[0] === 'debug') {
-    return res.status(200).json({ url: req.url, pathname, segments, method: req.method, segments0: segments[0], segments1: segments[1] })
-  }
-
   try {
     // POST /api/admin/auth
     if (segments[0] === 'auth' && req.method === 'POST') {
@@ -118,10 +114,12 @@ export default async function handler(req, res) {
 
     // /api/admin/messages
     if (segments[0] === 'messages') {
-      const id = segments[1] ? parseInt(segments[1]) : null
-      if (id && !isNaN(id) && req.method === 'PATCH') {
-        const msg = await prisma.contactMessage.update({ where: { id }, data: { read: true } })
-        return res.status(200).json(msg)
+      if (req.method === 'PATCH' || (req.method === 'POST' && req.body?.action === 'read')) {
+        const id = segments[1] ? parseInt(segments[1]) : req.body?.id
+        if (id && !isNaN(id)) {
+          const msg = await prisma.contactMessage.update({ where: { id }, data: { read: true } })
+          return res.status(200).json(msg)
+        }
       }
       if (req.method === 'GET') {
         const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } })

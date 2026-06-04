@@ -143,7 +143,7 @@ export default function AdminDashboard() {
 
   const markRead = async (id) => {
     try {
-      await authFetch(`/api/admin/messages/${id}`, { method: 'PATCH' })
+      await authFetch('/api/admin/messages', { method: 'POST', body: JSON.stringify({ action: 'read', id }) })
       setMessages(messages.map(m => m.id === id ? { ...m, read: true } : m))
     } catch {}
   }
