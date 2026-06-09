@@ -1,4 +1,4 @@
-const MAP = { pending: 0, paid: 1, preparing: 2, dispatched: 3, transit: 4, delivered: 5 }
+const MAP = { Pendiente: 0, Pagada: 1, 'En preparación': 2, 'En tránsito': 3, Entregado: 4, Rechazado: -1, Error: -1 }
 
 const steps = [
   { label: 'Orden Recibida', sub: 'Pago confirmado' },

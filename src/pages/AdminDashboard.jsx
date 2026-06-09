@@ -478,7 +478,7 @@ export default function AdminDashboard() {
               </motion.div>
 
               <div className="flex flex-wrap gap-2 mb-6">
-                {['all', 'Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
+                {['all', 'Pendiente', 'Pagada', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
                   <button key={s} onClick={() => setFilter(s)}
                     className={`px-4 py-2 rounded-full text-xs font-medium transition-all duration-300 ${
                       filter === s ? 'bg-navy text-cream shadow-sm' : 'text-stone hover:text-navy hover:bg-navy/5'
@@ -530,7 +530,7 @@ export default function AdminDashboard() {
                                 onChange={e => { e.stopPropagation(); updateStatus(o.id, e.target.value) }}
                                 whileFocus={{ scale: 1.02 }}
                                 className="text-xs border border-outline-v/20 rounded-lg px-2.5 py-1.5 bg-white/60 text-navy focus:bg-white focus:border-navy focus:outline-none transition-all duration-200">
-                                {['Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
+                                {['Pendiente', 'Pagada', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
                                   <option key={s} value={s}>{s}</option>
                                 ))}
                               </motion.select>
@@ -905,7 +905,7 @@ export default function AdminDashboard() {
                   <select value={selected.status}
                     onChange={e => { updateStatus(selected.id, e.target.value); setSelected({ ...selected, status: e.target.value }) }}
                     className="input-minimal w-full">
-                    {['Pendiente', 'Confirmado', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
+                    {['Pendiente', 'Pagada', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].map(s => (
                       <option key={s} value={s}>{s}</option>
                     ))}
                   </select>

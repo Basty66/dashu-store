@@ -72,12 +72,15 @@ export default async function handler(req, res) {
     if (segments[0] === 'orders') {
       const id = segments[1] ? parseInt(segments[1]) : null
       if (id && !isNaN(id) && req.method === 'PATCH') {
-        const allowed = ['status']
-        const data = {}
-        for (const k of allowed) {
-          if (req.body[k] !== undefined) data[k] = req.body[k]
-        }
-        const order = await prisma.order.update({ where: { id }, data })
+          const allowed = ['status']
+          const data = {}
+          for (const k of allowed) {
+            if (req.body[k] !== undefined) data[k] = req.body[k]
+          }
+          if (data.status && !['Pendiente', 'Pagada', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].includes(data.status)) {
+            return res.status(400).json({ error: 'Estado no válido' })
+          }
+          const order = await prisma.order.update({ where: { id }, data })
         return res.status(200).json(order)
       }
       if (req.method === 'GET') {
