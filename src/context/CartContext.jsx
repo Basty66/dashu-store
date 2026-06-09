@@ -58,10 +58,12 @@ export function CartProvider({ children }) {
   const [stockAlert, setStockAlert] = useState(null)
   const alertTimer = useRef(null)
 
-  const addItem = useCallback((item, quantity, sourceRect) => {
+  const addItem = useCallback((item, qtyOrRect, sourceRect) => {
     const existing = items.find(i => i.id === item.id)
     const stock = item.stock ?? 99
-    const qty = quantity ?? 1
+    const isNum = typeof qtyOrRect === 'number'
+    const qty = isNum ? (qtyOrRect ?? 1) : 1
+    const rect = isNum ? sourceRect : qtyOrRect
     const currentQty = existing ? existing.quantity : 0
     if (currentQty >= stock || stock < 1) {
       if (alertTimer.current) clearTimeout(alertTimer.current)
@@ -72,12 +74,12 @@ export function CartProvider({ children }) {
 
     dispatch({ type: 'ADD_ITEM', item: { ...item, stock, quantity: qty } })
 
-    if (sourceRect && item.image) {
+    if (rect && item.image) {
       const cartEl = document.querySelector('[data-cart-target]')
       const targetRect = cartEl?.getBoundingClientRect()
       if (targetRect) {
         if (flyTimer.current) clearTimeout(flyTimer.current)
-        setFlyItem({ left: sourceRect.left, top: sourceRect.top, width: sourceRect.width, height: sourceRect.height, image: item.image })
+        setFlyItem({ left: rect.left, top: rect.top, width: rect.width, height: rect.height, image: item.image })
         flyTimer.current = setTimeout(() => setFlyItem(null), 700)
       }
     }
