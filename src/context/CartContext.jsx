@@ -16,16 +16,17 @@ function cartReducer(state, action) {
     case 'ADD_ITEM': {
       const existing = state.find(i => i.id === action.item.id)
       const stock = action.item.stock ?? 99
+      const qty = action.item.quantity ?? 1
       if (existing) {
-        const newQty = Math.min(existing.quantity + 1, stock)
+        const newQty = Math.min(existing.quantity + qty, stock)
         if (newQty === existing.quantity) return state
         return state.map(i =>
           i.id === action.item.id ? { ...i, quantity: newQty, stock } : { ...i, stock: i.stock ?? 99 }
         )
       }
-      const validStock = Math.min(1, stock)
+      const validStock = Math.min(qty, stock)
       if (validStock < 1) return state
-      return [...state, { ...action.item, quantity: 1, stock }]
+      return [...state, { ...action.item, quantity: validStock, stock }]
     }
     case 'UPDATE_QUANTITY': {
       const item = state.find(i => i.id === action.id)
@@ -57,9 +58,10 @@ export function CartProvider({ children }) {
   const [stockAlert, setStockAlert] = useState(null)
   const alertTimer = useRef(null)
 
-  const addItem = useCallback((item, sourceRect) => {
+  const addItem = useCallback((item, quantity, sourceRect) => {
     const existing = items.find(i => i.id === item.id)
     const stock = item.stock ?? 99
+    const qty = quantity ?? 1
     const currentQty = existing ? existing.quantity : 0
     if (currentQty >= stock || stock < 1) {
       if (alertTimer.current) clearTimeout(alertTimer.current)
@@ -68,7 +70,7 @@ export function CartProvider({ children }) {
       return false
     }
 
-    dispatch({ type: 'ADD_ITEM', item: { ...item, stock } })
+    dispatch({ type: 'ADD_ITEM', item: { ...item, stock, quantity: qty } })
 
     if (sourceRect && item.image) {
       const cartEl = document.querySelector('[data-cart-target]')
