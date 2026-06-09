@@ -130,7 +130,7 @@ export default function Navbar() {
                             className="w-full flex items-center gap-3 px-4 py-3 hover:bg-navy/5 transition-colors text-left border-b border-outline-v/5 last:border-0">
                             <div className="w-10 h-10 rounded-lg bg-cream/80 overflow-hidden flex-shrink-0">
                               {p.images?.[0] ? (
-                                <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" />
+                                <img src={p.images[0]} alt={p.title} className="w-full h-full object-cover" loading="lazy" />
                               ) : (
                                 <div className="w-full h-full flex items-center justify-center text-outline-v text-[10px]">?</div>
                               )}

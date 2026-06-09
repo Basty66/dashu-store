@@ -1,11 +1,13 @@
+import { useState } from 'react'
 import { motion } from 'framer-motion'
-import { ShoppingBag } from 'lucide-react'
+import { ShoppingBag, Check } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { clp } from '../lib/format'
 
 export default function ProductCard({ product }) {
   const { addItem, stockAlert } = useCart()
+  const [added, setAdded] = useState(false)
   const maxed = stockAlert?.id === product.id
 
   return (
@@ -15,7 +17,7 @@ export default function ProductCard({ product }) {
         <div className="aspect-[4/3] bg-cream/80 overflow-hidden relative">
           {product.images?.[0] ? (
             <motion.img src={product.images[0]} alt={product.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover" loading="lazy"
               whileHover={{ scale: 1.08 }} transition={{ duration: 0.5 }} />
           ) : (
             <div className="w-full h-full flex items-center justify-center text-outline-v text-xs">Sin imagen</div>
@@ -56,11 +58,12 @@ export default function ProductCard({ product }) {
           <motion.button onClick={e => {
             if (product.stock === 0) return
             const rect = e.currentTarget.getBoundingClientRect()
-            addItem({ id: product.id, name: product.title, price: product.offerPrice || product.price, image: product.images?.[0], stock: product.stock }, rect)
+            const ok = addItem({ id: product.id, name: product.title, price: product.offerPrice || product.price, image: product.images?.[0], stock: product.stock }, rect)
+            if (ok) { setAdded(true); setTimeout(() => setAdded(false), 2000) }
           }}
-            className={`p-3 rounded-full transition-colors ${product.stock === 0 ? 'bg-stone/20 text-stone cursor-not-allowed' : 'bg-navy text-cream hover:bg-gold'}`}
+            className={`p-3 rounded-full transition-colors ${product.stock === 0 ? 'bg-stone/20 text-stone cursor-not-allowed' : added ? 'bg-green-600 text-white' : 'bg-navy text-cream hover:bg-gold'}`}
             whileHover={product.stock === 0 ? undefined : { scale: 1.1 }} whileTap={product.stock === 0 ? undefined : { scale: 0.9 }}>
-            <ShoppingBag size={14} />
+            {added ? <Check size={14} /> : <ShoppingBag size={14} />}
           </motion.button>
         </div>
         {maxed && (
