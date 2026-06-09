@@ -25,6 +25,9 @@ export default async function handler(req, res) {
         for (const k of allowed) {
           if (req.body[k] !== undefined) data[k] = k === 'price' || k === 'offerPrice' || k === 'stock' ? Number(req.body[k]) : req.body[k]
         }
+        if (data.price !== undefined && data.price < 1) return res.status(400).json({ error: 'El precio debe ser mayor a 0' })
+        if (data.stock !== undefined && data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo' })
+        if (data.offerPrice !== undefined && data.offerPrice < 0) return res.status(400).json({ error: 'El precio de oferta no puede ser negativo' })
         const product = await prisma.product.update({ where: { id }, data })
         return res.status(200).json(product)
       }
@@ -46,8 +49,12 @@ export default async function handler(req, res) {
       if (!requireAdmin(req, res)) return
       const { title, description, category, price, offerPrice, stock, images } = req.body
       if (!title || !description || !price) return res.status(400).json({ error: 'Faltan campos requeridos' })
+      const p = Number(price); const o = offerPrice ? Number(offerPrice) : null; const s = Number(stock ?? 0)
+      if (p < 1) return res.status(400).json({ error: 'El precio debe ser mayor a 0' })
+      if (s < 0) return res.status(400).json({ error: 'El stock no puede ser negativo' })
+      if (o !== null && o < 0) return res.status(400).json({ error: 'El precio de oferta no puede ser negativo' })
       const product = await prisma.product.create({
-        data: { title, description, category: category || 'alisado', price: Number(price), offerPrice: offerPrice ? Number(offerPrice) : null, stock: Number(stock || 0), images: images || [] }
+        data: { title, description, category: category || 'alisado', price: p, offerPrice: o, stock: s, images: images || [] }
       })
       return res.status(201).json(product)
     }

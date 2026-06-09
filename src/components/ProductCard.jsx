@@ -56,7 +56,7 @@ export default function ProductCard({ product }) {
           <motion.button onClick={e => {
             if (product.stock === 0) return
             const rect = e.currentTarget.getBoundingClientRect()
-            addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0], stock: product.stock }, rect)
+            addItem({ id: product.id, name: product.title, price: product.offerPrice || product.price, image: product.images?.[0], stock: product.stock }, rect)
           }}
             className={`p-3 rounded-full transition-colors ${product.stock === 0 ? 'bg-stone/20 text-stone cursor-not-allowed' : 'bg-navy text-cream hover:bg-gold'}`}
             whileHover={product.stock === 0 ? undefined : { scale: 1.1 }} whileTap={product.stock === 0 ? undefined : { scale: 0.9 }}>

@@ -63,6 +63,9 @@ async function revertStock(tx, items) {
 
 async function confirmOrder(tx, order) {
   const updated = await tx.order.update({ where: { id: order.id }, data: { status: 'Pagada' }, include: { items: true } })
+  if (order.couponCode) {
+    await tx.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
+  }
   const lowStock = []
   for (const item of order.items) {
     const product = await tx.product.findUnique({ where: { id: item.productId } })
@@ -105,8 +108,6 @@ export default async function handler(req, res) {
       if (!order) return res.writeHead(302, { Location: '/checkout?error=not_found' }).end()
       if (order.status === 'Pagada') return res.writeHead(302, { Location: `/order/${order.orderNumber}?success=true` }).end()
 
-      if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
-
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
         return await confirmOrder(tx, order)
       })
@@ -145,8 +146,6 @@ export default async function handler(req, res) {
         })
         return res.status(200).end()
       }
-
-      if (order.couponCode) await prisma.coupon.updateMany({ where: { code: order.couponCode, isActive: true }, data: { usedCount: { increment: 1 } } })
 
       const [updatedOrder, lowStockItems] = await prisma.$transaction(async (tx) => {
         return await confirmOrder(tx, order)

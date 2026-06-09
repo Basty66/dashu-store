@@ -50,6 +50,9 @@ export default async function handler(req, res) {
     if (!items?.length || !customer?.name || !customer?.email) {
       return res.status(400).json({ error: 'Faltan campos requeridos' })
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
+      return res.status(400).json({ error: 'Email inválido' })
+    }
 
     const stockErrors = await validateStock(items)
     if (stockErrors.length > 0) {

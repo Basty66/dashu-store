@@ -12,7 +12,8 @@ export default async function handler(req, res) {
       where: { orderNumber: req.query.orderNumber },
       select: {
         id: true, orderNumber: true, status: true, total: true, discount: true,
-        customerName: true, shippingAddress: true, shippingCity: true, shippingRegion: true,
+        customerName: true, customerEmail: true, customerPhone: true,
+        shippingAddress: true, shippingCity: true, shippingRegion: true,
         createdAt: true, items: { select: { id: true, title: true, quantity: true, price: true } },
       },
     })

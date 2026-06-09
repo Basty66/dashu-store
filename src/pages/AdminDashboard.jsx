@@ -213,6 +213,11 @@ export default function AdminDashboard() {
 
   const handleSave = async () => {
     if (!form.title || !form.description || !form.price) return
+    const priceVal = Number(form.price)
+    const stockVal = Number(form.stock)
+    if (priceVal < 1) { showToast('El precio debe ser mayor a 0'); setSaving(false); return }
+    if (stockVal < 0) { showToast('El stock no puede ser negativo'); setSaving(false); return }
+    if (form.offerPrice && Number(form.offerPrice) < 0) { showToast('El precio de oferta no puede ser negativo'); setSaving(false); return }
     setSaving(true)
     try {
       const body = { ...form, category: form.category || 'alisado', price: Number(form.price), offerPrice: form.offerPrice ? Number(form.offerPrice) : null, stock: Number(form.stock) }

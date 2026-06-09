@@ -149,7 +149,7 @@ export default function ProductDetail() {
             <motion.button onClick={e => {
               if (outOfStock) return
               const rect = e.currentTarget.getBoundingClientRect()
-              addItem({ id: product.id, name: product.title, price: product.price, image: product.images?.[0], stock: product.stock }, rect)
+              addItem({ id: product.id, name: product.title, price: product.offerPrice || product.price, image: product.images?.[0], stock: product.stock }, rect)
             }}
               disabled={outOfStock}
               className={`btn-primary w-full inline-flex items-center justify-center gap-2 ${outOfStock ? 'opacity-50 cursor-not-allowed' : ''}`}

@@ -84,6 +84,10 @@ export default function Checkout() {
       setError('Completa todos los campos obligatorios')
       return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      setError('El email ingresado no es válido')
+      return
+    }
     setLoading(true)
     setError('')
     try {
