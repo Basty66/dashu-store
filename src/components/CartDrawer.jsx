@@ -32,9 +32,16 @@ export default function CartDrawer() {
 
             <div className="flex-1 overflow-y-auto px-6 py-4 space-y-3">
               {items.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center">
-                  <ShoppingBag size={28} strokeWidth={1} className="text-outline-v mb-4" />
-                  <p className="text-sm text-stone">Tu carrito está vacío</p>
+                <div className="h-full flex flex-col items-center justify-center text-center px-8">
+                  <div className="w-16 h-16 rounded-full bg-navy/5 flex items-center justify-center mb-5">
+                    <ShoppingBag size={24} strokeWidth={1} className="text-navy/30" />
+                  </div>
+                  <p className="text-sm font-medium text-navy mb-1">Tu carrito está vacío</p>
+                  <p className="text-xs text-stone mb-6">Agrega productos desde nuestro catálogo</p>
+                  <button onClick={() => { setIsOpen(false); navigate('/') }}
+                    className="btn-primary text-xs inline-flex items-center gap-2">
+                    Ver Productos
+                  </button>
                 </div>
               ) : (
                 items.map(item => {

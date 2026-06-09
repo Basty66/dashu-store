@@ -348,6 +348,19 @@ export default function Checkout() {
                 </motion.div>
               )}
             </div>
+            <motion.div className="mt-4 grid grid-cols-2 gap-3"
+              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
+              <div className="glass rounded-xl p-3 text-center space-y-1">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 mx-auto text-navy/60" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
+                <p className="text-[10px] text-stone font-medium">Webpay Plus</p>
+                <p className="text-[9px] text-stone/60">Tarjetas débito/crédito</p>
+              </div>
+              <div className="glass rounded-xl p-3 text-center space-y-1">
+                <svg viewBox="0 0 24 24" className="w-5 h-5 mx-auto text-navy/60" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                <p className="text-[10px] text-stone font-medium">Compra Segura</p>
+                <p className="text-[9px] text-stone/60">Datos protegidos</p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </div>
