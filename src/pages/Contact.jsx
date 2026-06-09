@@ -9,6 +9,8 @@ export default function Contact() {
   const [done, setDone] = useState(false)
   const [error, setError] = useState('')
 
+  const [sentMsg, setSentMsg] = useState(null)
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     if (!form.name || !form.email || !form.message) return
@@ -21,6 +23,7 @@ export default function Contact() {
         body: JSON.stringify(form),
       })
       if (!r.ok) throw new Error('Error al enviar')
+      setSentMsg({ ...form, date: new Date().toLocaleString('es-CL') })
       setDone(true)
     } catch {
       setError('Error al enviar el mensaje. Intenta de nuevo.')
@@ -60,12 +63,33 @@ export default function Contact() {
             <div className="md:col-span-3">
               {done ? (
                 <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="glass rounded-xl p-8 text-center space-y-3">
-                  <CheckCircle size={32} className="mx-auto text-green-600" />
-                  <p className="text-sm font-medium text-navy">Mensaje enviado</p>
-                  <p className="text-xs text-stone">Te responderemos a la brevedad.</p>
-                  <button onClick={() => { setDone(false); setForm({ name: '', email: '', subject: '', message: '' }) }}
-                    className="text-xs text-gold underline hover:no-underline transition-all">Enviar otro</button>
+                  className="glass rounded-xl p-8 space-y-4">
+                  <div className="text-center space-y-2">
+                    <CheckCircle size={32} className="mx-auto text-green-600" />
+                    <p className="text-sm font-medium text-navy">Mensaje enviado</p>
+                    <p className="text-xs text-stone">Te responderemos a la brevedad.</p>
+                  </div>
+                  <div className="border border-navy/10 rounded-xl p-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-stone">Nombre</span>
+                      <span className="text-navy font-medium">{sentMsg?.name}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-stone">Email</span>
+                      <span className="text-navy font-medium">{sentMsg?.email}</span>
+                    </div>
+                    {sentMsg?.subject && <div className="flex justify-between">
+                      <span className="text-stone">Asunto</span>
+                      <span className="text-navy font-medium">{sentMsg.subject}</span>
+                    </div>}
+                    <div className="border-t border-navy/5 pt-2 mt-2">
+                      <p className="text-stone mb-1">Mensaje</p>
+                      <p className="text-navy">{sentMsg?.message}</p>
+                    </div>
+                    <p className="text-2xs text-stone/60 text-right">{sentMsg?.date}</p>
+                  </div>
+                  <button onClick={() => { setDone(false); setSentMsg(null); setForm({ name: '', email: '', subject: '', message: '' }) }}
+                    className="text-xs text-gold underline hover:no-underline transition-all block mx-auto">Enviar otro</button>
                 </motion.div>
               ) : (
                 <form onSubmit={handleSubmit} className="glass rounded-xl p-6 space-y-4">
