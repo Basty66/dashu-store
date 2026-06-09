@@ -531,7 +531,7 @@ export default function Home() {
                 ))}
               </motion.div>
               <p className="text-sm text-stone">¿Te gustó el producto? Ayuda a otros clientes dejando tu opinión en Google.</p>
-              <a href="https://search.google.com/local/writereview?placeid=YOUR_PLACE_ID" target="_blank" rel="noopener noreferrer"
+              <a href={`https://search.google.com/local/writereview?placeid=${import.meta.env.VITE_GOOGLE_PLACE_ID || 'YOUR_PLACE_ID'}`} target="_blank" rel="noopener noreferrer"
                 className="btn-primary inline-flex items-center gap-2 text-sm group"
                 style={{ position: 'relative', overflow: 'hidden' }}>
                 <motion.span className="relative z-10" whileHover={{ x: 2 }}>Escribir en Google</motion.span>

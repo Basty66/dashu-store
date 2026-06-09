@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { MessageCircle, X } from 'lucide-react'
 import { useState, useEffect } from 'react'
 
-const PHONE = '56912345678'
+const PHONE = import.meta.env.VITE_WHATSAPP_NUMBER || '56912345678'
 const MESSAGE = 'Hola%20DASHU%2C%20quiero%20consultar%20por%20sus%20productos'
 
 export default function WhatsAppButton() {
