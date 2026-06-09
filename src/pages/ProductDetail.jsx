@@ -35,6 +35,34 @@ export default function ProductDetail() {
 
   useEffect(() => { setQty(1); setAdded(false); setImgIdx(0) }, [id])
 
+  useEffect(() => {
+    if (!product) return
+    const ld = document.getElementById('product-ld')
+    if (ld) ld.remove()
+    const script = document.createElement('script')
+    script.id = 'product-ld'
+    script.type = 'application/ld+json'
+    script.textContent = JSON.stringify({
+      '@context': 'https://schema.org/',
+      '@type': 'Product',
+      name: product.title,
+      description: product.description,
+      image: product.images?.[0] || '',
+      offers: {
+        '@type': 'Offer',
+        priceCurrency: 'CLP',
+        price: (product.offerPrice || product.price) * 1000,
+        availability: product.stock === 0 ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
+        url: window.location.href,
+      },
+    })
+    document.head.appendChild(script)
+    return () => { const s = document.getElementById('product-ld'); if (s) s.remove() }
+  }, [product])
+
+  const outOfStock = !product ? true : product.stock === 0
+  const finalPrice = product ? (product.offerPrice || product.price) : 0
+
   const handleAdd = (e, goToCart) => {
     if (outOfStock) return
     const rect = e.currentTarget.getBoundingClientRect()
@@ -87,33 +115,6 @@ export default function ProductDetail() {
   }
 
   const images = product.images?.length ? product.images : []
-  const outOfStock = product.stock === 0
-  const finalPrice = product.offerPrice || product.price
-
-  useEffect(() => {
-    const ld = document.getElementById('product-ld')
-    if (ld) ld.remove()
-    if (!product) return
-    const script = document.createElement('script')
-    script.id = 'product-ld'
-    script.type = 'application/ld+json'
-    script.textContent = JSON.stringify({
-      '@context': 'https://schema.org/',
-      '@type': 'Product',
-      name: product.title,
-      description: product.description,
-      image: product.images?.[0] || '',
-      offers: {
-        '@type': 'Offer',
-        priceCurrency: 'CLP',
-        price: finalPrice * 1000,
-        availability: outOfStock ? 'https://schema.org/OutOfStock' : 'https://schema.org/InStock',
-        url: window.location.href,
-      },
-    })
-    document.head.appendChild(script)
-    return () => { const s = document.getElementById('product-ld'); if (s) s.remove() }
-  }, [product])
 
   return (
     <div className="min-h-screen pt-16">
