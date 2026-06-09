@@ -8,6 +8,10 @@ import { clp } from '../lib/format'
 const links = [
   { path: '/', label: 'Inicio' },
   { path: '/tracking', label: 'Tracking' },
+  { path: '/contacto', label: 'Contacto' },
+  { path: '/terminos', label: 'Términos' },
+  { path: '/privacidad', label: 'Privacidad' },
+  { path: '/devoluciones', label: 'Devoluciones' },
 ]
 
 export default function Navbar() {
