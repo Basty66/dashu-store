@@ -1,149 +1,85 @@
-import { prisma } from '../../lib/config/prisma.js'
-import { notifyNewOrder } from '../../lib/notifications/new-order.js'
-import { validateStock } from '../../lib/utils/stock.js'
-import { validateCoupon } from '../../lib/utils/coupon.js'
+import { z } from 'zod'
+import { prisma } from '../../lib/prisma.js'
+import { handler, pathSegments, methodNotAllowed, body, siteUrl, HttpError } from '../../lib/http.js'
+import { quote, publicQuote, createOrder, applyPayment, findOrderForCustomer, publicOrder } from '../../lib/orders.js'
+import { createPreference, getPayment, paymentMode } from '../../lib/mercadopago.js'
+import { quoteSchema } from '../../shared/checkoutSchema.js'
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+const orderRef = z.object({ orderNumber: z.string().min(3).max(20), token: z.string().min(10).max(80) })
+
+async function startPayment(order, req) {
+  const preference = await createPreference(order, siteUrl(req))
+  await prisma.order.update({ where: { id: order.id }, data: { mpPreferenceId: preference.id } })
+  return preference.url
 }
 
-function getBaseUrl(req) {
-  return `${process.env.VERCEL_PROTOCOL || 'https'}://${process.env.VERCEL_URL || req.headers.host || 'localhost:5173'}`
-}
+export default handler(async (req, res) => {
+  if (req.method !== 'POST') return methodNotAllowed(res)
+  const [action] = pathSegments(req, /^\/api\/checkout\/?/)
+  const input = body(req)
 
-async function revertStock(tx, items) {
-  for (const item of items) {
-    const product = await tx.product.findUnique({ where: { id: item.id } })
-    if (!product) continue
-    await tx.product.update({ where: { id: item.id }, data: { stock: product.stock + item.quantity } })
+  // Totales calculados en el servidor para el resumen del carrito/checkout.
+  if (action === 'quote') {
+    const q = await quote(quoteSchema.parse(input))
+    return res.status(200).json({ ...publicQuote(q), paymentsEnabled: paymentMode() !== null })
   }
-}
 
-export default async function handler(req, res) {
-  setCors(res)
-  if (req.method === 'OPTIONS') return res.status(200).end()
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  const { pathname } = new URL(req.url, 'http://localhost')
-  const segment = pathname.replace(/^\/api\/checkout\/?/, '').split('/')[0]
-
-  // POST /api/checkout/validate-coupon
-  if (segment === 'validate-coupon') {
+  // Crea el pedido, reserva stock y devuelve el link de pago de Mercado Pago.
+  if (action === 'create') {
+    const order = await createOrder(input)
     try {
-      const { code, cartTotal } = req.body
-      const result = await validateCoupon(code, cartTotal)
-      return res.status(200).json(result)
+      const redirectUrl = await startPayment(order, req)
+      return res.status(201).json({ orderNumber: order.orderNumber, token: order.accessToken, redirectUrl })
     } catch (error) {
-      return res.status(500).json({ error: error.message })
-    }
-  }
-
-  let order, orderItems
-
-  try {
-    const body = req.body
-    orderItems = body.items
-    const { items, customer, couponCode } = body
-
-    if (!items?.length || !customer?.name || !customer?.email) {
-      return res.status(400).json({ error: 'Faltan campos requeridos' })
-    }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customer.email)) {
-      return res.status(400).json({ error: 'Email inválido' })
-    }
-
-    const stockErrors = await validateStock(items)
-    if (stockErrors.length > 0) {
-      return res.status(409).json({ error: 'Stock insuficiente', details: stockErrors })
-    }
-
-    const subtotal = items.reduce((s, i) => s + i.price * i.quantity, 0)
-    const shipping = typeof req.body.shipping === 'number' ? req.body.shipping : 0
-
-    let discount = 0
-    if (couponCode) {
-      const validated = await validateCoupon(couponCode, subtotal + shipping)
-      if (!validated.valid) return res.status(400).json({ error: validated.error })
-      discount = validated.discount
-    }
-
-    const total = Math.max(subtotal + shipping - discount, 0)
-    const orderNumber = `DASHU-${Date.now().toString(36).toUpperCase()}`
-
-    order = await prisma.$transaction(async (tx) => {
-      for (const item of items) {
-        const product = await tx.product.findUnique({ where: { id: item.id } })
-        if (!product) throw new Error(`Producto ID ${item.id} no encontrado`)
-        const newStock = product.stock - item.quantity
-        if (newStock < 0) throw new Error(`Stock insuficiente para "${product.title}"`)
-        await tx.product.update({ where: { id: item.id }, data: { stock: newStock } })
-      }
-
-      return await tx.order.create({
-        data: {
-          orderNumber, total, discount, shippingCost: shipping,
-          couponCode: couponCode || null,
-          paymentMethod: segment === 'mercadopago' ? 'mercadopago' : 'webpay',
-          customerName: customer.name, customerEmail: customer.email,
-          customerPhone: customer.phone || '', shippingRegion: customer.region || '',
-          shippingCity: customer.city || '', shippingAddress: customer.address || '',
-          notes: customer.notes || '',
-          items: { create: items.map(i => ({ productId: i.id, quantity: i.quantity, price: i.price, title: i.title })) },
-        },
-      })
-    })
-
-    notifyNewOrder(order)
-    const baseUrl = getBaseUrl(req)
-
-    // POST /api/checkout/mercadopago
-    if (segment === 'mercadopago') {
-      const mpToken = process.env.MERCADO_PAGO_ACCESS_TOKEN
-      if (!mpToken) return res.status(500).json({ error: 'Mercado Pago no configurado' })
-      const mpBody = {
-        items: items.map(i => ({ id: String(i.id), title: i.title, quantity: i.quantity, unit_price: i.price * 1000, currency_id: 'CLP' })),
-        payer: { name: customer.name, email: customer.email },
-        back_urls: { success: `${baseUrl}/checkout/success`, failure: `${baseUrl}/checkout/failure`, pending: `${baseUrl}/checkout/pending` },
-        external_reference: orderNumber,
-        notification_url: `${baseUrl}/api/webhooks/mercadopago`,
-        auto_return: 'approved',
-      }
-      const mpRes = await fetch('https://api.mercadopago.com/checkout/preferences', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${mpToken}` },
-        body: JSON.stringify(mpBody),
-      })
-      const mpData = await mpRes.json()
-      if (!mpData.init_point) throw new Error('Error al crear preferencia MP')
-      await prisma.order.update({ where: { id: order.id }, data: { paymentId: mpData.id } })
-      return res.status(200).json({ url: mpData.init_point, orderNumber })
-    }
-
-    // POST /api/checkout/webpay (default)
-    const transbankBody = {
-      buy_order: orderNumber, session_id: String(order.id), amount: total * 1000,
-      return_url: `${baseUrl}/api/webhooks/webpay`,
-    }
-    const token = Buffer.from(`${process.env.WEBPAY_COMMERCE_CODE}:${process.env.WEBPAY_API_KEY}`).toString('base64')
-    const WEBPAY_URL = process.env.WEBPAY_ENVIRONMENT === 'production' ? 'https://webpay3g.transbank.cl' : 'https://webpay3gint.transbank.cl'
-    const tbRes = await fetch(`${WEBPAY_URL}/rswebpaytransaction/api/webpay/v1.2/transactions`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Basic ${token}` },
-      body: JSON.stringify(transbankBody),
-    })
-    const tbData = await tbRes.json()
-    if (!tbData.url || !tbData.token) throw new Error('Error al crear transacción Webpay')
-    await prisma.order.update({ where: { id: order.id }, data: { paymentId: tbData.token } })
-    return res.status(200).json({ url: tbData.url, token: tbData.token, orderNumber })
-  } catch (error) {
-    if (order && orderItems?.length) {
+      // Si no se pudo iniciar el pago, se deshace el pedido y se libera el stock.
       await prisma.$transaction(async (tx) => {
-        await revertStock(tx, orderItems)
-        await tx.order.update({ where: { id: order.id }, data: { status: 'Error' } })
-      }).catch(() => {})
+        for (const item of order.items) {
+          if (item.productId) {
+            await tx.product.update({ where: { id: item.productId }, data: { stock: { increment: item.packUnits * item.quantity } } })
+          }
+        }
+        await tx.order.delete({ where: { id: order.id } })
+      })
+      throw error
     }
-    return res.status(500).json({ error: error.message })
   }
-}
+
+  // Reintentar el pago de un pedido que sigue reservado.
+  if (action === 'pay') {
+    const { orderNumber, token } = orderRef.parse(input)
+    const order = await findOrderForCustomer(orderNumber, { token })
+    if (order.status !== 'PENDIENTE_PAGO') throw new HttpError(409, 'Este pedido ya no está esperando pago')
+    return res.status(200).json({ redirectUrl: await startPayment(order, req) })
+  }
+
+  // Al volver de Mercado Pago: confirma el pago directo con la API (no depende del webhook).
+  if (action === 'confirm') {
+    const { orderNumber, token, paymentId } = orderRef.extend({ paymentId: z.string().max(40).optional() }).parse(input)
+    let order = await findOrderForCustomer(orderNumber, { token })
+    if (paymentId && /^\d+$/.test(paymentId)) {
+      const payment = await getPayment(paymentId)
+      if (payment && String(payment.external_reference) === order.orderNumber) {
+        await applyPayment(payment)
+        order = await findOrderForCustomer(orderNumber, { token })
+      }
+    }
+    return res.status(200).json(publicOrder(order))
+  }
+
+  // Solo desarrollo local (PAYMENTS_MOCK=1): simula la respuesta de Mercado Pago.
+  if (action === 'mock-pay') {
+    if (paymentMode() !== 'mock') throw new HttpError(404, 'No encontrado')
+    const { orderNumber, token, outcome } = orderRef.extend({ outcome: z.enum(['approved', 'rejected']) }).parse(input)
+    const order = await findOrderForCustomer(orderNumber, { token })
+    await applyPayment({
+      id: `mock-${Date.now()}`,
+      status: outcome,
+      external_reference: order.orderNumber,
+      transaction_amount: order.total,
+      currency_id: 'CLP',
+    })
+    return res.status(200).json(publicOrder(await findOrderForCustomer(orderNumber, { token })))
+  }
+
+  throw new HttpError(404, 'No encontrado')
+})

@@ -1,16 +1,13 @@
-import { prisma } from '../lib/config/prisma.js'
+import { prisma } from '../lib/prisma.js'
+import { paymentMode } from '../lib/mercadopago.js'
 
-export default async function handler(req, res) {
-  const checks = { ok: true, db: false, timestamp: new Date().toISOString() }
-
+export default async function health(req, res) {
+  const checks = { ok: true, db: false, payments: paymentMode() || 'off', timestamp: new Date().toISOString() }
   try {
     await prisma.$queryRaw`SELECT 1`
     checks.db = true
-  } catch (e) {
+  } catch {
     checks.ok = false
-    checks.dbError = e.message
   }
-
-  const code = checks.ok ? 200 : 503
-  return res.status(code).json(checks)
+  return res.status(checks.ok ? 200 : 503).json(checks)
 }

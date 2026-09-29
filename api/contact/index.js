@@ -1,19 +1,20 @@
-import { prisma } from '../../lib/config/prisma.js'
+import { z } from 'zod'
+import { prisma } from '../../lib/prisma.js'
+import { handler, methodNotAllowed, body } from '../../lib/http.js'
+import { notifyContactMessage } from '../../lib/email.js'
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+const contactSchema = z.object({
+  name: z.string().trim().min(2, 'Ingresa tu nombre').max(80),
+  email: z.string().trim().email('Email no válido').max(120),
+  phone: z.string().trim().max(20).optional().default(''),
+  subject: z.string().trim().max(120).optional().default(''),
+  message: z.string().trim().min(10, 'Escribe un mensaje un poco más largo').max(3000),
+})
 
-  if (req.method !== 'POST') return res.status(405).json({ error: 'Method not allowed' })
-
-  try {
-    const { name, email, subject, message } = req.body
-    if (!name || !email || !message) return res.status(400).json({ error: 'Faltan campos requeridos' })
-    const msg = await prisma.contactMessage.create({ data: { name, email, subject: subject || '', message } })
-    return res.status(201).json({ success: true, id: msg.id })
-  } catch (error) {
-    return res.status(500).json({ error: error.message })
-  }
-}
+export default handler(async (req, res) => {
+  if (req.method !== 'POST') return methodNotAllowed(res)
+  const data = contactSchema.parse(body(req))
+  const message = await prisma.contactMessage.create({ data: { ...data, phone: data.phone || null } })
+  await notifyContactMessage(message)
+  return res.status(201).json({ ok: true })
+})
