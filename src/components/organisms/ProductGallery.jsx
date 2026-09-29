@@ -30,42 +30,40 @@ export function ProductGallery({ images, title }) {
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="group relative aspect-square cursor-zoom-in overflow-hidden rounded-4xl bg-navy"
+        className="group relative aspect-square overflow-hidden rounded-4xl bg-navy"
         onMouseMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect()
           setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 })
         }}
         onMouseLeave={() => setZoom(null)}
-        onClick={() => setLightbox(true)}
       >
-        <AnimatePresence mode="wait" initial={false}>
-          <motion.div
-            key={images[index]}
-            className="h-full w-full"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.25 }}
-          >
-            <img
-              src={images[index]}
-              alt={`${title} — imagen ${index + 1} de ${count}`}
-              className="h-full w-full object-cover transition-transform duration-300 ease-out"
-              style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%`, transform: 'scale(1.6)' } : undefined}
-              fetchPriority={index === 0 ? 'high' : undefined}
-            />
-          </motion.div>
-        </AnimatePresence>
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation()
-            setLightbox(true)
-          }}
-          className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors hover:bg-white/20"
-          aria-label="Ver en pantalla completa"
+          onClick={() => setLightbox(true)}
+          className="absolute inset-0 block h-full w-full cursor-zoom-in"
+          aria-label={`Ver ${title} en pantalla completa`}
         >
-          <Expand size={16} />
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span
+              key={images[index]}
+              className="block h-full w-full"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.25 }}
+            >
+              <img
+                src={images[index]}
+                alt={`${title} — imagen ${index + 1} de ${count}`}
+                className="h-full w-full object-cover transition-transform duration-300 ease-out"
+                style={zoom ? { transformOrigin: `${zoom.x}% ${zoom.y}%`, transform: 'scale(1.6)' } : undefined}
+                fetchPriority={index === 0 ? 'high' : undefined}
+              />
+            </motion.span>
+          </AnimatePresence>
+          <span className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white backdrop-blur-md transition-colors group-hover:bg-white/20" aria-hidden="true">
+            <Expand size={16} />
+          </span>
         </button>
         {count > 1 && (
           <div className="absolute inset-x-4 bottom-4 flex justify-between opacity-0 transition-opacity duration-200 group-hover:opacity-100">

@@ -85,9 +85,11 @@ export default function OrderPage() {
       const data = await load()
       polls.current += 1
       // Si vuelve de Mercado Pago y el pago aún no se refleja, reintenta unos segundos.
-      if (data?.status === 'PENDIENTE_PAGO' && returnedFromPayment && polls.current < 12) timer = setTimeout(tick, 4000)
+      if (data?.status === 'PENDIENTE_PAGO' && returnedFromPayment && polls.current < 12) {
+        timer = setTimeout(() => void tick(), 4000)
+      }
     }
-    tick()
+    void tick()
     return () => clearTimeout(timer)
   }, [load, returnedFromPayment])
 

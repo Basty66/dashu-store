@@ -64,17 +64,20 @@ function ImagesEditor({ images, onChange, mutate }) {
   async function upload(files) {
     setUploading(true)
     const urls = []
-    for (const file of files) {
-      try {
-        const dataUrl = await compressImage(file)
-        const { url } = await mutate('/admin/images', { method: 'POST', body: { dataUrl } })
-        urls.push(url)
-      } catch (e) {
-        toast(`${file.name}: ${e.message}`, 'error')
+    try {
+      for (const file of files) {
+        try {
+          const dataUrl = await compressImage(file)
+          const { url } = await mutate('/admin/images', { method: 'POST', body: { dataUrl } })
+          urls.push(url)
+        } catch (e) {
+          toast(`${file.name}: ${e.message}`, 'error')
+        }
       }
+      onChange([...images, ...urls])
+    } finally {
+      setUploading(false)
     }
-    onChange([...images, ...urls])
-    setUploading(false)
   }
   return (
     <div>
@@ -94,7 +97,7 @@ function ImagesEditor({ images, onChange, mutate }) {
           <span className="flex flex-col items-center gap-1 text-xs"><ImagePlus size={20} />{uploading ? 'Subiendo…' : 'Agregar'}</span>
         </button>
       </div>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => { upload([...e.target.files]); e.target.value = '' }} />
+      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => { void upload([...e.target.files]); e.target.value = '' }} />
       <p className="mt-2 text-xs text-muted">Las imágenes se comprimen automáticamente. La primera es la principal. Usa fotos cuadradas para mejor resultado.</p>
     </div>
   )
