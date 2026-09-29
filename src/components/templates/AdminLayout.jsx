@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Mail, LogOut, ExternalLink, Menu, X } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Mail, LogOut, ExternalLink, Menu, X, GraduationCap, Store } from 'lucide-react'
 import { api } from '../../lib/api'
 import { Logo } from '../atoms/Logo'
 import { Toaster } from '../organisms/Chrome'
@@ -9,6 +9,8 @@ const nav = [
   { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true },
   { to: '/admin/pedidos', label: 'Pedidos', icon: ShoppingCart },
   { to: '/admin/productos', label: 'Productos', icon: Package },
+  { to: '/admin/capacitaciones', label: 'Capacitaciones', icon: GraduationCap },
+  { to: '/admin/distribuidores', label: 'Distribuidores', icon: Store },
   { to: '/admin/cupones', label: 'Cupones', icon: Ticket },
   { to: '/admin/resenas', label: 'Reseñas', icon: Star },
   { to: '/admin/mensajes', label: 'Mensajes', icon: Mail },

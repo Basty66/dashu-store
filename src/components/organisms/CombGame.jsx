@@ -77,7 +77,7 @@ export function CombGame({ onDone }) {
         role="img"
         aria-label={`Cabeza con el pelo parado. Peinado: ${Math.round(progress * 100)}%`}
       >
-        <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r + 60} fill="#C3A06A" opacity="0.08" />
+        <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r + 60} fill="#C9A27E" opacity="0.08" />
         {strands.map((s) => {
           const angle = combed.has(s.id) ? s.tame : s.wild
           return (
@@ -88,14 +88,14 @@ export function CombGame({ onDone }) {
                 transition: 'transform 600ms cubic-bezier(0.34, 1.56, 0.64, 1)',
               }}
             >
-              <line x1="0" y1="0" x2={combed.has(s.id) ? s.len * 0.62 : s.len} y2="0" stroke={s.gold ? '#C3A06A' : '#0B1220'} strokeWidth="7" strokeLinecap="round" style={{ transition: 'all 600ms ease-out' }} />
+              <line x1="0" y1="0" x2={combed.has(s.id) ? s.len * 0.62 : s.len} y2="0" stroke={s.gold ? '#C9A27E' : '#171210'} strokeWidth="7" strokeLinecap="round" style={{ transition: 'all 600ms ease-out' }} />
             </g>
           )
         })}
-        <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r} fill="#F4EFE7" stroke="#0B1220" strokeWidth="4" />
-        <circle cx="168" cy="262" r="7" fill="#0B1220" />
-        <circle cx="232" cy="262" r="7" fill="#0B1220" />
-        <path d={mouth} fill="none" stroke="#0B1220" strokeWidth="5" strokeLinecap="round" style={{ transition: 'd 400ms ease-out' }} />
+        <circle cx={HEAD.x} cy={HEAD.y} r={HEAD.r} fill="#FBF6F2" stroke="#171210" strokeWidth="4" />
+        <circle cx="168" cy="262" r="7" fill="#171210" />
+        <circle cx="232" cy="262" r="7" fill="#171210" />
+        <path d={mouth} fill="none" stroke="#171210" strokeWidth="5" strokeLinecap="round" style={{ transition: 'd 400ms ease-out' }} />
         {progress > 0.8 && <circle cx="150" cy="292" r="10" fill="#E8A0A0" opacity="0.5" />}
         {progress > 0.8 && <circle cx="250" cy="292" r="10" fill="#E8A0A0" opacity="0.5" />}
       </svg>

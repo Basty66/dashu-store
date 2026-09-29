@@ -37,7 +37,7 @@ export function Hero({ product }) {
             </span>
           </motion.h1>
           <motion.p className="mt-6 max-w-md text-lg leading-relaxed text-paper/70" {...rise(0.25)}>
-            {product?.title || 'Protein Down Cream'}: alisado de origen coreano, sin plancha ni calor. Compra por unidad o en packs para tu barbería o reventa.
+            {product ? `${product.brand} ${product.title}` : 'DASHU Down Permanent'}: alisado de origen coreano, sin plancha ni calor. Compra por unidad o en packs para tu barbería o reventa.
           </motion.p>
           <motion.div className="mt-9 flex flex-col gap-3 sm:flex-row" {...rise(0.35)}>
             <Button variant="gold" size="lg" href="#comprar">
@@ -73,7 +73,7 @@ export function Hero({ product }) {
               src="/img/product-hero.webp"
               srcSet="/img/product-hero-560.webp 560w, /img/product-hero.webp 1024w"
               sizes="(min-width: 1024px) 600px, 92vw"
-              alt={`${product?.title || 'Protein Down Cream'} de DASHU`}
+              alt={product ? `${product.brand} ${product.title}` : 'DASHU Down Permanent'}
               className="h-full w-full object-cover"
               style={{ WebkitMaskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)' }}
               fetchPriority="high"

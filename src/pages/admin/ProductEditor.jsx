@@ -37,7 +37,7 @@ function PacksEditor({ packs, onChange, errors }) {
             <Input type="number" min={0} step={500} value={p.price || ''} onChange={(e) => update(i, { price: Number(e.target.value) })} className="col-span-9 h-11 font-mono sm:col-span-4" aria-label={`Precio del pack de ${p.units}`} placeholder="Ej: 115000" />
             <p className="col-span-7 text-sm tabular sm:col-span-3">{per ? formatCLP(per) : '—'}{saving > 0 && <span className="ml-2 text-xs text-success">−{saving}%</span>}</p>
             <div className="col-span-5 flex items-center justify-end gap-2 sm:col-span-3">
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.isActive} onChange={(e) => update(i, { isActive: e.target.checked })} className="h-4 w-4 accent-[#0B1220]" /> Sí</label>
+              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.isActive} onChange={(e) => update(i, { isActive: e.target.checked })} className="h-4 w-4 accent-[#171210]" /> Sí</label>
               <button type="button" onClick={() => onChange(packs.filter((_, j) => j !== i))} className="rounded-lg p-2 text-muted hover:bg-danger/10 hover:text-danger" aria-label={`Quitar pack de ${p.units}`}><Trash2 size={15} /></button>
             </div>
           </div>
@@ -192,7 +192,7 @@ export default function ProductEditor() {
           </Card>
           <Card className="space-y-4">
             <h2 className="font-display text-lg font-bold">Publicación</h2>
-            <label className="flex items-center justify-between gap-3 text-sm"><span>Visible en la tienda</span><input type="checkbox" checked={form.isActive} onChange={set('isActive')} className="h-5 w-5 accent-[#0B1220]" /></label>
+            <label className="flex items-center justify-between gap-3 text-sm"><span>Visible en la tienda</span><input type="checkbox" checked={form.isActive} onChange={set('isActive')} className="h-5 w-5 accent-[#171210]" /></label>
             <Field label="Marca"><Input value={form.brand} onChange={set('brand')} /></Field>
             <Field label="Contenido" optional hint="Ej: 150 ml"><Input value={form.contentSize} onChange={set('contentSize')} /></Field>
             <Field label="URL" optional error={errors.slug} hint="Se genera desde el nombre si la dejas vacía"><Input value={form.slug} onChange={set('slug')} className="font-mono" /></Field>

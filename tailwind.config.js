@@ -3,14 +3,16 @@ export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
+      // Paleta inspirada en la caja DASHU: negro, café crema, rosado crema y blanco.
       colors: {
-        ink: '#0B1220',
-        navy: { DEFAULT: '#131D33', 700: '#1B2A47', 600: '#26395E' },
-        bone: '#F4EFE7',
-        paper: '#FBF8F3',
-        sand: { DEFAULT: '#E6DDCE', 300: '#D6CAB6' },
-        gold: { DEFAULT: '#C3A06A', light: '#DCC296', deep: '#7A5C30' },
-        muted: '#5A6072',
+        ink: '#171210', // texto y botones principales (negro cálido)
+        navy: { DEFAULT: '#110D0B', 700: '#241D19', 600: '#352B26' }, // superficies oscuras (hero, secciones negras)
+        bone: '#FBF6F2', // fondo general (blanco crema)
+        paper: '#FFFFFF',
+        sand: { DEFAULT: '#EEDFD6', 300: '#DFCABF' }, // bordes y divisores
+        gold: { DEFAULT: '#C9A27E', light: '#E2C6AB', deep: '#7C5638' }, // café crema (acento)
+        blush: { DEFAULT: '#F3DCD2', light: '#FAEEE8', deep: '#B97F6C' }, // rosado crema
+        muted: '#6B5E57',
         success: '#1F7A4D',
         danger: '#B42318',
         warning: '#B54708',

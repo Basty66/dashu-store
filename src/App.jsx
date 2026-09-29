@@ -15,6 +15,10 @@ const Terms = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Terms
 const Privacy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Privacy })))
 const Returns = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Returns })))
 
+const Seminars = lazy(() => import('./pages/Seminars'))
+const SeminarPage = lazy(() => import('./pages/SeminarPage'))
+const EnrollmentPage = lazy(() => import('./pages/EnrollmentPage'))
+const Distributors = lazy(() => import('./pages/Distributors'))
 const MockPayment = lazy(() => import('./pages/MockPayment'))
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'))
 
@@ -58,6 +62,10 @@ export default function App() {
             <Route path="pedido/:orderNumber" element={<OrderPage />} />
             <Route path="seguimiento" element={<TrackOrder />} />
             <Route path="contacto" element={<Contact />} />
+            <Route path="capacitaciones" element={<Seminars />} />
+            <Route path="capacitaciones/:slug" element={<SeminarPage />} />
+            <Route path="inscripcion/:code" element={<EnrollmentPage />} />
+            <Route path="distribuidores" element={<Distributors />} />
             <Route path="terminos" element={<Terms />} />
             <Route path="privacidad" element={<Privacy />} />
             <Route path="devoluciones" element={<Returns />} />

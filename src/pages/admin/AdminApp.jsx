@@ -10,6 +10,9 @@ import OrderDetail from './OrderDetail'
 import Products from './Products'
 import ProductEditor from './ProductEditor'
 import Coupons from './Coupons'
+import Seminars from './Seminars'
+import SeminarEditor from './SeminarEditor'
+import Distributors from './Distributors'
 import { Reviews, Messages } from './Inbox'
 
 // Protege las rutas del panel: sin sesión válida redirige al login.
@@ -46,6 +49,10 @@ export default function AdminApp() {
         <Route path="productos" element={<Products />} />
         <Route path="productos/nuevo" element={<ProductEditor />} />
         <Route path="productos/:id" element={<ProductEditor />} />
+        <Route path="capacitaciones" element={<Seminars />} />
+        <Route path="capacitaciones/nueva" element={<SeminarEditor />} />
+        <Route path="capacitaciones/:id" element={<SeminarEditor />} />
+        <Route path="distribuidores" element={<Distributors />} />
         <Route path="cupones" element={<Coupons />} />
         <Route path="resenas" element={<Reviews />} />
         <Route path="mensajes" element={<Messages />} />

@@ -19,7 +19,7 @@ export default function NotFound() {
             {done ? (
               <motion.div key="done" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
                 <h1 className="display-lg mt-3">¡Quedó impecable!</h1>
-                <p className="mt-4 text-lg text-muted">Lo que hiciste en 10 segundos, la Protein Down Cream lo hace en 10 minutos y dura semanas. La página igual no existe, pero tu pelo puede quedar así.</p>
+                <p className="mt-4 text-lg text-muted">Lo que hiciste en 10 segundos, DASHU Down Permanent lo hace en 10 minutos y dura semanas. La página igual no existe, pero tu pelo puede quedar así.</p>
               </motion.div>
             ) : (
               <motion.div key="play" exit={{ opacity: 0, y: -12 }}>

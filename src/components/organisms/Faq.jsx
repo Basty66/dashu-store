@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom'
-import { STORE, WHOLESALE_CONTACT_FROM_UNITS, PAYMENT_WINDOW_MINUTES } from '@shared/store.js'
+import { STORE, DISTRIBUTOR, DISTRIBUTOR_MIN_UNITS, DISTRIBUTOR_MIN_TOTAL, PAYMENT_WINDOW_MINUTES } from '@shared/store.js'
 import { FREE_SHIPPING_FROM } from '@shared/shipping.js'
 import { formatCLP } from '@shared/pricing.js'
 import { AccordionItem } from '../molecules/Accordion'
@@ -8,7 +8,7 @@ import { SectionHeading } from '../molecules/SectionHeading'
 const faqs = [
   {
     q: '¿Cómo funcionan los packs?',
-    a: 'Puedes comprar por unidad o en packs de 5, 10, 20 y 40. Mientras más grande el pack, menor es el precio por unidad. Puedes combinar distintos packs en el mismo carrito.',
+    a: 'Puedes comprar por unidad o en packs de 3 y 10 cremas. Mientras más grande el pack, menor es el precio por unidad. Puedes combinar distintos packs en el mismo carrito.',
   },
   {
     q: '¿Cuánto cuesta el envío?',
@@ -32,8 +32,22 @@ const faqs = [
     a: 'Sí. En el checkout eliges boleta o factura e ingresas RUT, razón social y giro de tu empresa.',
   },
   {
-    q: `¿Y si necesito más de ${WHOLESALE_CONTACT_FROM_UNITS} unidades?`,
-    a: 'Escríbenos por WhatsApp o desde el formulario de contacto y te preparamos una cotización.',
+    q: '¿Cómo me hago distribuidor?',
+    a: (
+      <>
+        La compra mínima es de {DISTRIBUTOR.minBoxes} embalajes de {DISTRIBUTOR.unitsPerBox} cremas ({DISTRIBUTOR_MIN_UNITS} unidades) por {formatCLP(DISTRIBUTOR_MIN_TOTAL)}, y cada crema te queda a {formatCLP(DISTRIBUTOR.unitCost)}. Postula en{' '}
+        <Link to="/distribuidores" className="font-medium text-ink underline decoration-gold underline-offset-4">Distribuidores</Link> y te contactamos.
+      </>
+    ),
+  },
+  {
+    q: '¿Hacen capacitaciones para barberos?',
+    a: (
+      <>
+        Sí. Tomás Morales realiza seminarios y clases prácticas de alisado en distintas ciudades. Revisa las fechas y cupos en{' '}
+        <Link to="/capacitaciones" className="font-medium text-ink underline decoration-gold underline-offset-4">Capacitaciones</Link>.
+      </>
+    ),
   },
   {
     q: '¿Son distribuidores oficiales de DASHU?',

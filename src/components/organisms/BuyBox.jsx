@@ -1,11 +1,10 @@
 import { useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { ShoppingBag, Zap, TrendingDown, MessageCircle } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
+import { ShoppingBag, Zap, TrendingDown, Store } from 'lucide-react'
 import { formatCLP, packSavings, packUnitPrice, sortPacks, nextPackUpsell, packLabelLong } from '@shared/pricing.js'
-import { HIGHLIGHT_PACK_UNITS, WHOLESALE_CONTACT_FROM_UNITS } from '@shared/store.js'
+import { HIGHLIGHT_PACK_UNITS, DISTRIBUTOR } from '@shared/store.js'
 import { useCart } from '../../store/cart'
 import { toast } from '../../store/toast'
-import { whatsappLink } from '../../lib/contact'
 import { Button } from '../atoms/Button'
 import { PackOption } from '../molecules/PackOption'
 import { QuantityStepper } from '../molecules/QuantityStepper'
@@ -49,8 +48,6 @@ export function BuyBox({ product }) {
       toast(`Agregaste ${qty} × ${packLabelLong(pack.units)}`, 'success')
     }
   }
-
-  const wholesale = whatsappLink(`Hola, quiero cotizar más de ${WHOLESALE_CONTACT_FROM_UNITS} unidades de ${product.title}`)
 
   return (
     <div className="flex flex-col gap-6">
@@ -119,14 +116,10 @@ export function BuyBox({ product }) {
             <span className="h-2 w-2 rounded-full bg-success" aria-hidden="true" /> En stock, listo para despacho
           </span>
         )}
-        {wholesale && (
-          <>
-            {' · '}
-            <a href={wholesale} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-1 font-medium text-ink underline decoration-gold underline-offset-4 hover:text-gold-deep">
-              <MessageCircle size={14} aria-hidden="true" /> ¿Más de {WHOLESALE_CONTACT_FROM_UNITS} unidades? Cotiza
-            </a>
-          </>
-        )}
+        {' · '}
+        <Link to="/distribuidores" className="inline-flex items-center gap-1 font-medium text-ink underline decoration-gold underline-offset-4 hover:text-gold-deep">
+          <Store size={14} aria-hidden="true" /> ¿Revendes? Distribuidores desde {formatCLP(DISTRIBUTOR.unitCost)} c/u
+        </Link>
       </p>
     </div>
   )

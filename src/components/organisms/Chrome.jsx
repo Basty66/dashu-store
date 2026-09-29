@@ -8,7 +8,7 @@ import { whatsappLink } from '../../lib/contact'
 
 const messages = [
   'Envío a todo Chile con seguimiento',
-  'Packs de 5, 10, 20 y 40 con precio por volumen',
+  'Packs de 3 y 10 cremas con precio por volumen',
   FREE_SHIPPING_FROM !== null ? `Envío gratis desde ${formatCLP(FREE_SHIPPING_FROM)}` : 'Boleta o factura para tu negocio',
   'Paga seguro con Mercado Pago',
 ]

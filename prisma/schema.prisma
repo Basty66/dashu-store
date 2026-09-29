@@ -152,3 +152,90 @@ model ProductImage {
   mimeType  String
   createdAt DateTime @default(now())
 }
+
+// ---------- Capacitaciones ----------
+
+// Seminario, curso o clase práctica con cupos limitados.
+model Seminar {
+  id               Int          @id @default(autoincrement())
+  slug             String       @unique
+  title            String
+  kind             String       @default("seminario") // seminario | curso | clase | evento
+  summary          String       @default("")
+  description      String       @default("")
+  city             String
+  venue            String       @default("")
+  address          String       @default("")
+  host             String       @default("") // anfitrión o invitados (ej: "Bemol Barbería con Angelito")
+  date             DateTime // día del evento, guardado a mediodía hora de Chile
+  startTime        String? // "10:00"; sin hora = evento de día completo en el calendario
+  endTime          String?
+  scheduleNote     String       @default("") // ej: "Bloque AM"
+  price            Int? // null = valor por confirmar: se reciben pre-inscripciones sin pago
+  capacity         Int          @default(20)
+  seatsTaken       Int          @default(0) // cupos pagados o reservados mientras pagan
+  isPublished      Boolean      @default(true)
+  isCancelled      Boolean      @default(false)
+  image            String?
+  calendarEventId  String?
+  calendarSyncedAt DateTime?
+  calendarError    String?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  enrollments      Enrollment[]
+
+  @@index([date])
+}
+
+model Enrollment {
+  id             Int       @id @default(autoincrement())
+  code           String    @unique // SEM-XXXXXX
+  accessToken    String    @unique
+  seminarId      Int
+  status         String    @default("PENDIENTE_PAGO") // PREINSCRITO | PENDIENTE_PAGO | PAGADO | CANCELADO | EXPIRADO
+  holdsSeat      Boolean   @default(false)
+  name           String
+  email          String
+  phone          String
+  rut            String?
+  business       String?
+  notes          String?
+  amount         Int       @default(0)
+  paymentMethod  String? // mercadopago | manual
+  paymentStatus  String?
+  mpPreferenceId String?
+  mpPaymentId    String?
+  paidAt         DateTime?
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+  seminar        Seminar   @relation(fields: [seminarId], references: [id], onDelete: Restrict)
+
+  @@index([seminarId, status])
+  @@index([status, expiresAt])
+}
+
+// Postulaciones al programa de distribuidores.
+model DistributorLead {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  phone     String
+  business  String
+  rut       String?
+  region    String
+  city      String
+  boxes     Int      @default(3)
+  message   String?
+  status    String   @default("NUEVO") // NUEVO | CONTACTADO | APROBADO | DESCARTADO
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+// Configuración clave/valor (ej: conexión con Google Calendar).
+model Setting {
+  key       String   @id
+  value     String
+  updatedAt DateTime @updatedAt
+}

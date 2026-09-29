@@ -1,5 +1,6 @@
 import { handler, pathSegments, methodNotAllowed, body } from '../../lib/http.js'
 import { applyPayment } from '../../lib/orders.js'
+import { applyEnrollmentPayment } from '../../lib/seminars.js'
 import { getPayment, verifyWebhookSignature } from '../../lib/mercadopago.js'
 
 // POST /api/webhooks/mercadopago — notificaciones de pago de Mercado Pago.
@@ -19,6 +20,8 @@ export default handler(async (req, res) => {
 
   const payment = await getPayment(dataId)
   if (!payment) return res.status(200).json({ ignored: true })
-  const result = await applyPayment(payment)
+  // DS-... = pedido de la tienda, SEM-... = inscripción a una capacitación
+  const reference = String(payment.external_reference || '')
+  const result = reference.startsWith('SEM-') ? await applyEnrollmentPayment(payment) : await applyPayment(payment)
   return res.status(200).json(result)
 })
