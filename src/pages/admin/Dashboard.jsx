@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom'
-import { TrendingUp, Package, Truck, Clock, AlertTriangle, ArrowRight } from 'lucide-react'
+import { TrendingUp, Package, Truck, Clock, AlertTriangle, ArrowRight, GraduationCap, Store } from 'lucide-react'
 import { formatCLP } from '@shared/pricing.js'
+import { formatSeminarDate } from '@shared/seminars.js'
 import { useAdminData } from '../../hooks/useAdminData'
 import { Skeleton } from '../../components/atoms/Misc'
 import { ErrorState } from '../../components/molecules/Feedback'
@@ -78,6 +79,35 @@ export default function Dashboard() {
               )}
               <Link to="/admin/productos" className="mt-6 inline-flex items-center gap-1 text-sm font-medium hover:text-gold-deep">Ajustar stock <ArrowRight size={14} /></Link>
             </Card>
+          </div>
+
+          <div className="grid gap-6 lg:grid-cols-3">
+            <Card className="lg:col-span-2">
+              <div className="mb-4 flex items-center justify-between">
+                <h2 className="font-display text-lg font-bold">Próximas capacitaciones</h2>
+                <Link to="/admin/capacitaciones" className="inline-flex items-center gap-1 text-sm font-medium hover:text-gold-deep">Ver todas <ArrowRight size={14} /></Link>
+              </div>
+              {data.upcoming.length === 0 ? (
+                <p className="text-sm text-muted">No hay capacitaciones próximas.</p>
+              ) : (
+                <ul className="divide-y divide-sand">
+                  {data.upcoming.map((s) => (
+                    <li key={s.id}>
+                      <Link to={`/admin/capacitaciones/${s.id}`} className="flex items-center justify-between gap-4 py-3 text-sm hover:text-gold-deep">
+                        <span className="flex items-center gap-3">
+                          <GraduationCap size={16} className="text-gold-deep" aria-hidden="true" />
+                          <span><span className="font-medium">{s.title}</span> · {s.city}<span className="block text-xs text-muted ">{formatSeminarDate(s.date)}</span></span>
+                        </span>
+                        <span className="text-right font-mono text-xs tabular">
+                          {s.price === null ? `${s.preRegistered} pre-inscritos` : `${s.seatsTaken}/${s.capacity} cupos`}
+                        </span>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Card>
+            <Stat icon={Store} label="Distribuidores" value={data.newLeads} hint={data.newLeads === 1 ? 'postulación nueva' : 'postulaciones nuevas'} to="/admin/distribuidores" />
           </div>
         </div>
       )}

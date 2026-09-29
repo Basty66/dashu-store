@@ -15,6 +15,8 @@ import { ResellerCalculator } from '../components/organisms/ResellerCalculator'
 import { Reviews } from '../components/organisms/Reviews'
 import { Faq } from '../components/organisms/Faq'
 import { ProductCard } from '../components/organisms/ProductCard'
+import { Founder } from '../components/organisms/Founder'
+import { UpcomingSeminars, DistributorBand } from '../components/organisms/SeminarsPreview'
 
 function ShowcaseSkeleton() {
   return (
@@ -71,7 +73,10 @@ export default function Home() {
       <Bento product={product} />
       <BeforeAfter />
       <HowToUse />
+      <Founder />
+      <UpcomingSeminars />
       {product && <ResellerCalculator product={product} />}
+      <DistributorBand />
       <Reviews />
       <Faq />
 

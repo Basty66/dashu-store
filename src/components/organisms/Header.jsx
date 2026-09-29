@@ -8,8 +8,8 @@ import { Logo } from '../atoms/Logo'
 
 const links = [
   { to: '/tienda', label: 'Tienda' },
-  { to: '/#precios', label: 'Precios por volumen' },
-  { to: '/#como-usar', label: 'Cómo se usa' },
+  { to: '/capacitaciones', label: 'Capacitaciones' },
+  { to: '/distribuidores', label: 'Distribuidores' },
   { to: '/seguimiento', label: 'Seguimiento' },
   { to: '/contacto', label: 'Contacto' },
 ]

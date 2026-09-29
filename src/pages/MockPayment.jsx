@@ -5,10 +5,11 @@ import { api } from '../lib/api'
 import { Button } from '../components/atoms/Button'
 import { PageShell } from '../components/templates/PageShell'
 
-// SOLO DESARROLLO: reemplaza a Mercado Pago cuando PAYMENTS_MOCK=1 para probar el flujo completo.
+// SOLO DESARROLLO: reemplaza a Mercado Pago cuando PAYMENTS_MOCK=1 (pedidos e inscripciones).
 export default function MockPayment() {
   const [params] = useSearchParams()
-  const orderNumber = params.get('pedido')
+  const order = params.get('pedido')
+  const enrollment = params.get('inscripcion')
   const token = params.get('t')
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
@@ -16,8 +17,13 @@ export default function MockPayment() {
   async function pay(outcome) {
     setBusy(outcome)
     try {
-      await api('/checkout/mock-pay', { method: 'POST', body: { orderNumber, token, outcome } })
-      window.location.assign(`/pedido/${orderNumber}?t=${token}&status=${outcome}`)
+      if (enrollment) {
+        await api(`/seminars/inscripcion/${enrollment}/mock-pay`, { method: 'POST', body: { token, outcome } })
+        window.location.assign(`/inscripcion/${enrollment}?t=${token}&status=${outcome}`)
+      } else {
+        await api('/checkout/mock-pay', { method: 'POST', body: { orderNumber: order, token, outcome } })
+        window.location.assign(`/pedido/${order}?t=${token}&status=${outcome}`)
+      }
     } catch (e) {
       setError(e.message)
       setBusy(null)
@@ -25,7 +31,7 @@ export default function MockPayment() {
   }
 
   return (
-    <PageShell eyebrow="Entorno de pruebas" title="Pago simulado" description={`Pedido ${orderNumber}. Esta pantalla reemplaza a Mercado Pago solo en desarrollo local.`}>
+    <PageShell eyebrow="Entorno de pruebas" title="Pago simulado" description={`${enrollment ? `Inscripción ${enrollment}` : `Pedido ${order}`}. Esta pantalla reemplaza a Mercado Pago solo en desarrollo local.`}>
       <div className="flex flex-col gap-4 rounded-4xl border border-dashed border-warning/50 bg-warning/5 p-8">
         <FlaskConical className="text-warning" aria-hidden="true" />
         <div className="flex flex-wrap gap-3">

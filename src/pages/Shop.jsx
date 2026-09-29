@@ -8,7 +8,7 @@ import { PageShell } from '../components/templates/PageShell'
 export default function Shop() {
   const { data: products, loading, error, retry } = useProducts()
   return (
-    <PageShell eyebrow="Tienda" title="Productos DASHU" description="Compra por unidad o en packs de 5, 10, 20 y 40 con precio por volumen." width="max-w-7xl">
+    <PageShell eyebrow="Tienda" title="Productos DASHU" description="Compra por unidad o en packs de 3 y 10 con precio por volumen." width="max-w-7xl">
       {loading ? (
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="aspect-[4/5] rounded-4xl" />)}</div>
       ) : error ? (
