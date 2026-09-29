@@ -1,366 +1,233 @@
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useCart } from '../context/CartContext'
-import { useNavigate, useSearchParams } from 'react-router-dom'
-import { ShoppingBag, MapPin, CreditCard, ChevronRight, AlertCircle, Truck } from 'lucide-react'
-import { clp } from '../lib/format'
+import { useMemo, useState } from 'react'
+import { ShoppingBag, Lock, AlertCircle } from 'lucide-react'
+import { REGION_NAMES, communesOf } from '@shared/chile.js'
+import { checkoutSchema, fieldErrors } from '@shared/checkoutSchema.js'
+import { formatRut } from '@shared/rut.js'
+import { formatCLP } from '@shared/pricing.js'
+import { useCart } from '../store/cart'
+import { useQuote } from '../hooks/useQuote'
+import { useSeo } from '../hooks/useSeo'
+import { api } from '../lib/api'
+import { whatsappLink } from '../lib/contact'
+import { Button } from '../components/atoms/Button'
+import { Input, Select, Textarea } from '../components/atoms/Input'
+import { Field } from '../components/molecules/Field'
+import { EmptyState } from '../components/molecules/Feedback'
+import { TrustBadges } from '../components/molecules/TrustBadges'
+import { CheckoutSummary } from '../components/organisms/CheckoutSummary'
 
-const CHILE_REGIONS = {
-  'Metropolitana de Santiago': ['Santiago Centro', 'Providencia', 'Las Condes', 'Ñuñoa', 'Maipú', 'La Florida', 'Puente Alto', 'San Miguel', 'Vitacura', 'Peñalolén', 'Huechuraba', 'Renca', 'Quilicura', 'Cerrillos', 'Cerro Navia', 'Conchalí', 'El Bosque', 'Estación Central', 'Independencia', 'La Cisterna', 'La Granja', 'La Pintana', 'La Reina', 'Lo Barnechea', 'Lo Espejo', 'Lo Prado', 'Macul', 'Pedro Aguirre Cerda', 'Pirque', 'Pudahuel', 'Quinta Normal', 'Recoleta', 'San Bernardo', 'San Joaquín', 'San Ramón', 'Talagante', 'Buin', 'Colina', 'Curacaví', 'El Monte', 'Isla de Maipo', 'Lampa', 'María Pinto', 'Melipilla', 'Padre Hurtado', 'Peñaflor', 'San José de Maipo', 'Til Til'],
-  'Valparaíso': ['Valparaíso', 'Viña del Mar', 'Concón', 'Quilpué', 'Villa Alemana', 'San Antonio', 'Los Andes', 'La Calera', 'Quillota', 'Limache', 'Olmué', 'Algarrobo', 'Cartagena', 'Casablanca', 'Catemu', 'El Quisco', 'El Tabo', 'Hijuelas', 'La Cruz', 'Llay Llay', 'Los Andes', 'Nogales', 'Panquehue', 'Papudo', 'Petorca', 'Puchuncaví', 'Putaendo', 'Rinconada', 'San Felipe', 'Santa María', 'Santo Domingo', 'Valparaíso', 'Viña del Mar', 'Zapallar'],
-  'Biobío': ['Concepción', 'Talcahuano', 'Chillán', 'Los Ángeles', 'Coronel', 'Hualpén', 'Chiguayante', 'San Pedro de la Paz', 'Lota', 'Arauco', 'Cañete', 'Contulmo', 'Curanilahue', 'Florida', 'Hualqui', 'Lebu', 'Los Álamos', 'Laja', 'Mulchén', 'Nacimiento', 'Negrete', 'Penco', 'Quilaco', 'Quilleco', 'San Rosendo', 'Santa Bárbara', 'Santa Juana', 'Tirúa', 'Tomé', 'Yumbel'],
-  'O\'Higgins': ['Rancagua', 'San Fernando', 'Rengo', 'Machalí', 'Graneros', 'Mostazal', 'Codegua', 'Doñihue', 'Coltauco', 'Coínco', 'Pichidegua', 'Las Cabras', 'Peumo', 'San Vicente', 'Requínoa', 'Olivar', 'Quinta de Tilcoco', 'Nancagua', 'Chimbarongo', 'Palmilla', 'Peralillo', 'Navidad', 'Lolol', 'Santa Cruz', 'Pumanque', 'Placilla', 'Marchihue', 'Pichilemu', 'Litueche', 'La Estrella'],
-  'Arica y Parinacota': ['Arica', 'Camarones', 'Putre', 'General Lagos'],
-  'Tarapacá': ['Iquique', 'Alto Hospicio', 'Pozo Almonte', 'Camiña', 'Colchane', 'Huara', 'Pica', 'Pisagua'],
-  'Antofagasta': ['Antofagasta', 'Calama', 'San Pedro de Atacama', 'Mejillones', 'Taltal', 'Tocopilla', 'María Elena', 'Ollagüe'],
-  'Atacama': ['Copiapó', 'Vallenar', 'Huasco', 'Caldera', 'Chañaral', 'Diego de Almagro', 'Freirina', 'Tierra Amarilla'],
-  'Coquimbo': ['La Serena', 'Coquimbo', 'Ovalle', 'Illapel', 'Los Vilos', 'Salamanca', 'Andacollo', 'Combarbalá', 'Monte Patria', 'Punitaqui', 'Río Hurtado', 'Canela'],
-  'Maule': ['Talca', 'Curicó', 'Linares', 'Constitución', 'San Javier', 'Cauquenes', 'Molina', 'Parral', 'San Clemente', 'Teno', 'Romeral', 'Rauco', 'Sagrada Familia', 'Hualañé', 'Licantén', 'Vichuquén', 'Colbún', 'San Rafael', 'Chanco', 'Pelluhue', 'Empedrado', 'Maule', 'Pelarco', 'Río Claro'],
-  'Ñuble': ['Chillán', 'Chillán Viejo', 'San Carlos', 'Quillón', 'Bulnes', 'Cobquecura', 'Coelemu', 'El Carmen', 'Ninhue', 'Ñiquén', 'Pemuco', 'Pinto', 'Portezuelo', 'Quirihue', 'Ránguil', 'San Fabián', 'San Ignacio', 'San Nicolás', 'Treguaco', 'Yungay'],
-  'La Araucanía': ['Temuco', 'Padre Las Casas', 'Villarrica', 'Pucón', 'Angol', 'Lautaro', 'Nueva Imperial', 'Victoria', 'Collipulli', 'Curacautín', 'Gorbea', 'Loncoche', 'Pitrufquén', 'Carahue', 'Freire', 'Cunco', 'Cholchol', 'Perquenco', 'Galvarino', 'Saavedra', 'Teodoro Schmidt', 'Toltén', 'Vilcún', 'Ercilla', 'Los Sauces', 'Purén', 'Traiguén', 'Lumaco', 'Renaico'],
-  'Los Ríos': ['Valdivia', 'La Unión', 'Río Bueno', 'Paillaco', 'Futrono', 'Lanco', 'Máfil', 'Los Lagos', 'Corral', 'Mariquina', 'Panguipulli'],
-  'Los Lagos': ['Puerto Montt', 'Osorno', 'Castro', 'Ancud', 'Llanquihue', 'Puerto Varas', 'Calbuco', 'Frutillar', 'Fresia', 'Los Muermos', 'Maullín', 'Chonchi', 'Quellón', 'Quemchi', 'Dalcahue', 'Curaco de Vélez', 'Hualaihué', 'Puerto Octay', 'Purranque', 'Puyehue', 'Río Negro', 'San Juan de la Costa', 'San Pablo'],
-  'Aysén': ['Coyhaique', 'Puerto Aysén', 'Puerto Cisnes', 'Chile Chico', 'Cochrane', 'Río Ibáñez', 'Tortel', 'Guaitecas', 'O\'Higgins', 'Lago Verde'],
-  'Magallanes': ['Punta Arenas', 'Puerto Natales', 'Porvenir', 'Puerto Williams', 'Cabo de Hornos', 'Laguna Blanca', 'Río Verde', 'San Gregorio', 'Timaukel', 'Torres del Paine', 'Primavera'],
+const PROFILE_KEY = 'dashu-checkout-profile'
+const emptyForm = { name: '', email: '', phone: '', region: '', commune: '', address: '', notes: '', documentType: 'boleta', rut: '', businessName: '', businessActivity: '' }
+
+function loadProfile() {
+  try {
+    return { ...emptyForm, ...JSON.parse(localStorage.getItem(PROFILE_KEY) || '{}'), notes: '' }
+  } catch {
+    return emptyForm
+  }
 }
 
-const SHIPPING_COST = {
-  'Metropolitana de Santiago': 3,
-  'Valparaíso': 3,
-  "O'Higgins": 3,
-  'Maule': 4,
-  'Ñuble': 4,
-  'Biobío': 4,
-  'Coquimbo': 5,
-  'Atacama': 5,
-  'La Araucanía': 5,
-  'Los Ríos': 5,
-  'Antofagasta': 6,
-  'Los Lagos': 6,
-  'Arica y Parinacota': 7,
-  'Tarapacá': 7,
-  'Aysén': 8,
-  'Magallanes': 10,
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 16 },
-  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.4, 0, 0.2, 1] } },
-}
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: { opacity: 1, transition: { staggerChildren: 0.08 } },
+function Step({ n, title, children }) {
+  return (
+    <section className="rounded-4xl border border-sand bg-paper p-6 sm:p-8" aria-labelledby={`step-${n}`}>
+      <h2 id={`step-${n}`} className="flex items-center gap-3 font-display text-xl font-bold">
+        <span className="grid h-8 w-8 place-items-center rounded-full bg-ink font-mono text-sm font-medium text-paper">{n}</span>
+        {title}
+      </h2>
+      <div className="mt-6">{children}</div>
+    </section>
+  )
 }
 
 export default function Checkout() {
-  const { items, subtotal, clearCart } = useCart()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [form, setForm] = useState({ name: '', email: '', phone: '', region: '', city: '', address: '', notes: '' })
-  const [loading, setLoading] = useState(false)
-  const [payment, setPayment] = useState('webpay')
-  const [error, setError] = useState(searchParams.get('error') || '')
-  const [step, setStep] = useState(0)
-  const [couponCode, setCouponCode] = useState('')
+  useSeo({ title: 'Checkout' })
+  const items = useCart((s) => s.items)
+  const clearCart = useCart((s) => s.clear)
+  const [form, setForm] = useState(loadProfile)
   const [coupon, setCoupon] = useState(null)
-  const [couponLoading, setCouponLoading] = useState(false)
-  const [couponError, setCouponError] = useState('')
+  const [errors, setErrors] = useState({})
+  const [submitting, setSubmitting] = useState(false)
+  const [formError, setFormError] = useState('')
+  const { quote, loading } = useQuote({ region: form.region, couponCode: coupon })
+  const communes = useMemo(() => communesOf(form.region), [form.region])
 
-  const regions = Object.keys(CHILE_REGIONS)
-  const cities = form.region ? CHILE_REGIONS[form.region] : []
-  const discount = coupon?.valid ? coupon.discount : 0
-  const shipping = form.region ? (SHIPPING_COST[form.region] || 4) : 0
-  const total = subtotal + shipping - discount
+  const set = (key) => (e) => {
+    const value = e.target.value
+    setForm((f) => ({ ...f, [key]: value, ...(key === 'region' ? { commune: '' } : {}) }))
+    if (errors[`customer.${key}`]) setErrors((err) => ({ ...err, [`customer.${key}`]: undefined }))
+  }
+  const err = (key) => errors[`customer.${key}`]
 
-  const steps = [
-    { icon: ShoppingBag, label: 'Carrito', done: items.length > 0 },
-    { icon: MapPin, label: 'Envío', done: form.name && form.email && form.region && form.city && form.address },
-    { icon: CreditCard, label: 'Pago', done: false },
-  ]
+  if (!items.length) {
+    return (
+      <div className="container-x py-20">
+        <EmptyState icon={ShoppingBag} title="Tu carrito está vacío" message="Agrega un pack para continuar con la compra." action={<Button to="/#comprar" className="mt-2">Ver formatos</Button>} />
+      </div>
+    )
+  }
 
-  const handlePayment = async () => {
-    if (!form.name || !form.email || !form.region || !form.city || !form.address) {
-      setError('Completa todos los campos obligatorios')
+  async function submit(e) {
+    e.preventDefault()
+    setFormError('')
+    const payload = {
+      items: items.map(({ productId, packUnits, quantity }) => ({ productId, packUnits, quantity })),
+      customer: form,
+      couponCode: coupon,
+    }
+    const parsed = checkoutSchema.safeParse(payload)
+    if (!parsed.success) {
+      const found = fieldErrors(parsed.error)
+      setErrors(found)
+      const first = Object.keys(found).find((k) => k.startsWith('customer.'))
+      document.querySelector(`[name="${first}"]`)?.focus()
       return
     }
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
-      setError('El email ingresado no es válido')
-      return
-    }
-    setLoading(true)
-    setError('')
+    setSubmitting(true)
     try {
-      const body = {
-        items: items.map(i => ({ id: i.id, title: i.name, quantity: i.quantity, price: i.price })),
-        customer: {
-          name: form.name, email: form.email, phone: form.phone,
-          region: form.region, city: form.city, address: form.address, notes: form.notes,
-        },
-        shipping: shipping,
-        couponCode: coupon?.code || null,
-        discount: discount,
-      }
-      const endpoint = payment === 'webpay' ? '/api/checkout/webpay' : '/api/checkout/mercadopago'
-      const r = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      })
-      const data = await r.json()
-      if (!r.ok) {
-        if (data.details) {
-          throw new Error(data.details.map(d => d.error).join('\n'))
-        }
-        throw new Error(data.error || 'Error al procesar')
-      }
-      window.location.href = data.url
-    } catch (e) {
-      setError(e.message)
-    } finally {
-      setLoading(false)
+      const { orderNumber, token, redirectUrl } = await api('/checkout/create', { method: 'POST', body: payload })
+      const { notes: _notes, ...profile } = form
+      try {
+        localStorage.setItem(PROFILE_KEY, JSON.stringify(profile))
+        localStorage.setItem('dashu-last-order', JSON.stringify({ orderNumber, token }))
+      } catch { /* almacenamiento no disponible */ }
+      clearCart()
+      window.location.assign(redirectUrl)
+    } catch (error) {
+      setSubmitting(false)
+      setErrors(error.fields || {})
+      setFormError(error.problems?.length ? error.problems.map((p) => p.error).join(' · ') : error.message)
     }
   }
 
-  const applyCoupon = async () => {
-    if (!couponCode.trim()) return
-    setCouponLoading(true)
-    setCouponError('')
-    try {
-      const r = await fetch('/api/checkout/validate-coupon', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ code: couponCode.trim(), cartTotal: subtotal + (form.region ? (SHIPPING_COST[form.region] || 4) : 0) }),
-      })
-      const data = await r.json()
-      if (data.valid) {
-        setCoupon(data)
-      } else {
-        setCouponError(data.error || 'Cupón inválido')
-        setCoupon(null)
-      }
-    } catch {
-      setCouponError('Error al validar cupón')
-    }
-    setCouponLoading(false)
-  }
-
-  const removeCoupon = () => { setCoupon(null); setCouponCode(''); setCouponError('') }
+  const blocked = quote?.problems?.length > 0 || (coupon && quote?.couponError)
+  const paymentsOff = quote && quote.paymentsEnabled === false
+  const wa = whatsappLink('Hola, quiero completar una compra en DASHU STORE')
 
   return (
-    <div className="min-h-screen pt-20 pb-16">
-      <div className="max-w-[1280px] mx-auto px-6 md:px-20">
-        <motion.div className="text-center mb-10" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-          <span className="label text-xs text-gold">Checkout</span>
-          <h1 className="display-md text-navy mt-2">Finalizar Compra</h1>
-        </motion.div>
-
-        <div className="flex justify-center mb-10">
-          <div className="flex items-center gap-0">
-            {steps.map((s, i) => (
-              <div key={s.label} className="flex items-center">
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm transition-all duration-300 ${
-                    step === i ? 'bg-navy text-cream shadow-md' : 'text-stone'
-                  }`}>
-                  <s.icon size={14} />
-                  <span className="hidden sm:inline text-xs font-medium">{s.label}</span>
-                </motion.div>
-                {i < steps.length - 1 && (
-                  <ChevronRight size={14} className="mx-2 text-outline-v" />
-                )}
-              </div>
-            ))}
-          </div>
+    <div className="container-x py-10 lg:py-14">
+      <header className="mb-10 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <p className="eyebrow text-gold-deep">Checkout seguro</p>
+          <h1 className="display-lg mt-2">Finaliza tu compra</h1>
         </div>
+        <p className="flex items-center gap-2 text-sm text-muted"><Lock size={15} aria-hidden="true" /> Pagas en Mercado Pago. No guardamos datos de tarjetas.</p>
+      </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-          <div className="lg:col-span-7 space-y-6">
-            <AnimatePresence>
-              {error && (
-                <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-                  className="glass p-4 rounded-lg text-sm text-red-700 border border-red-200 bg-red-50/50 overflow-hidden">
-                  {error.split('\n').map((line, i) => (
-                    <p key={i} className="flex items-center gap-2"><AlertCircle size={14} className="flex-shrink-0" />{line}</p>
-                  ))}
-                </motion.div>
-              )}
-            </AnimatePresence>
-
-            <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-6">
-              <motion.div variants={itemVariants} className="glass p-6 md:p-8 rounded-xl">
-                <h2 className="h-md text-navy mb-6 flex items-center gap-2">
-                  <MapPin size={16} className="text-gold" /> Información de Envío
-                </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="md:col-span-2">
-                    <label className="input-label">Nombre completo</label>
-                    <input className="input-minimal w-full" placeholder="Ej: Juan Pérez"
-                      value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="input-label">Email</label>
-                    <input type="email" className="input-minimal w-full" placeholder="ejemplo@correo.cl"
-                      value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="input-label">Teléfono</label>
-                    <input type="tel" className="input-minimal w-full" placeholder="+56 9 XXXX XXXX"
-                      value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} />
-                  </div>
-                  <div>
-                    <label className="input-label">Región</label>
-                    <select className="input-minimal w-full" value={form.region}
-                      onChange={e => setForm({ ...form, region: e.target.value, city: '' })}>
-                      <option value="">Seleccionar</option>
-                      {regions.map(r => <option key={r} value={r}>{r}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="input-label">Comuna</label>
-                    <select className="input-minimal w-full" value={form.city}
-                      onChange={e => setForm({ ...form, city: e.target.value })} disabled={!cities.length}>
-                      <option value="">Seleccionar</option>
-                      {cities.map(c => <option key={c} value={c}>{c}</option>)}
-                    </select>
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="input-label">Dirección</label>
-                    <input className="input-minimal w-full" placeholder="Calle, número, depto"
-                      value={form.address} onChange={e => setForm({ ...form, address: e.target.value })} />
-                  </div>
-                  <div className="md:col-span-2">
-                    <label className="input-label">Notas del pedido</label>
-                    <input className="input-minimal w-full" placeholder="Opcional — ej: dejar en conserjería"
-                      value={form.notes} onChange={e => setForm({ ...form, notes: e.target.value })} />
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div variants={itemVariants} className="glass p-6 md:p-8 rounded-xl">
-                <h2 className="h-md text-navy mb-6 flex items-center gap-2">
-                  <CreditCard size={16} className="text-gold" /> Método de Pago
-                </h2>
-                <div className="flex rounded-xl bg-white/60 p-1.5 border border-outline-v/15 max-w-sm">
-                  {['webpay', 'mercadopago'].map(m => (
-                    <button key={m} onClick={() => setPayment(m)}
-                      className={`flex-1 min-h-[44px] py-3 px-4 rounded-lg text-sm font-medium transition-all duration-300 ${
-                        payment === m ? 'bg-navy text-cream shadow-sm' : 'text-stone hover:text-navy'
-                      }`}>
-                      {m === 'webpay' ? 'Webpay Plus' : 'Mercado Pago'}
-                    </button>
-                  ))}
-                </div>
-                <AnimatePresence mode="wait">
-                  <motion.p key={payment} initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 4 }}
-                    className="text-xs mt-3 text-outline-v">
-                    {payment === 'webpay' ? 'Débito / Crédito / Prepago' : 'Pago con Mercado Pago'}
-                  </motion.p>
-                </AnimatePresence>
-              </motion.div>
-
-              <motion.button className="btn-primary w-full justify-center text-base" onClick={handlePayment}
-                disabled={loading || items.length === 0}
-                whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                {loading ? (
-                  <motion.span animate={{ opacity: [1, 0.5, 1] }} transition={{ duration: 1, repeat: Infinity }}>Procesando...</motion.span>
-                ) : (
-                  <>Pagar {clp(total)}</>
-                )}
-              </motion.button>
-            </motion.div>
-          </div>
-
-          <div className="lg:col-span-5">
-            <div className="glass p-6 rounded-xl sticky top-24 space-y-5 shadow-card">
-              <h2 className="h-md text-navy flex items-center gap-2">
-                <ShoppingBag size={16} className="text-gold" /> Resumen
-              </h2>
-              {items.length === 0 ? (
-                <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-sm text-stone">Tu carrito está vacío</motion.p>
-              ) : (
-                <motion.div variants={containerVariants} initial="hidden" animate="visible" className="space-y-4">
-                  {items.map(item => (
-                    <motion.div key={item.id} variants={itemVariants} className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-lg overflow-hidden bg-white/50 flex items-center justify-center flex-shrink-0 border border-outline-v/10">
-                        {item.image ? (
-                          <img src={item.image} alt={item.name} className="w-full h-full object-contain p-1" />
-                        ) : (
-                          <span className="text-xs text-outline-v">{item.quantity}x</span>
-                        )}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-navy">{item.name}</p>
-                        <p className="text-xs text-stone">Cant: {item.quantity}</p>
-                      </div>
-                      <p className="text-sm font-semibold text-navy whitespace-nowrap">
-                        {clp(item.price * item.quantity)}
-                      </p>
-                    </motion.div>
-                  ))}
-                  <div className="border-t border-outline-v/20 pt-4 space-y-3">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-stone">Subtotal</span>
-                      <span className="text-navy font-medium">{clp(subtotal)}</span>
-                    </div>
-                    <div className="flex justify-between text-sm">
-                      <span className="text-stone flex items-center gap-1">
-                        <Truck size={12} /> Envío
-                      </span>
-                      <span className="text-navy font-medium">{form.region ? clp(shipping) : '—'}</span>
-                    </div>
-                    <div className="border-t border-outline-v/10 pt-3">
-                      <div className="flex gap-2">
-                        <input value={couponCode} onChange={e => setCouponCode(e.target.value.toUpperCase())}
-                          placeholder="Cupón de descuento"
-                          className="input-minimal flex-1 text-xs" disabled={!!coupon} />
-                        {coupon ? (
-                          <motion.button onClick={removeCoupon} whileTap={{ scale: 0.95 }}
-                            className="text-xs px-3 py-2 rounded-lg bg-red-50 text-red-600 hover:bg-red-100 transition-colors whitespace-nowrap">
-                            Quitar
-                          </motion.button>
-                        ) : (
-                          <motion.button onClick={applyCoupon} disabled={couponLoading || !couponCode.trim()}
-                            whileTap={{ scale: 0.95 }}
-                            className="text-xs px-3 py-2 rounded-lg bg-navy text-cream hover:bg-navy/90 transition-colors whitespace-nowrap disabled:opacity-50">
-                            {couponLoading ? '...' : 'Aplicar'}
-                          </motion.button>
-                        )}
-                      </div>
-                      {couponError && <p className="text-xs text-red-500 mt-1">{couponError}</p>}
-                      {coupon?.valid && (
-                        <motion.p initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }}
-                          className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                          Cupón {coupon.code} aplicado — {coupon.type === 'percentage' ? `${coupon.value}%` : `${clp(coupon.value)}`} de descuento
-                        </motion.p>
-                      )}
-                    </div>
-                    {discount > 0 && (
-                      <div className="flex justify-between text-sm">
-                        <span className="text-green-600">Descuento</span>
-                        <span className="text-green-600 font-medium">-{clp(discount)}</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between font-semibold text-base pt-3 border-t border-outline-v/20">
-                      <span className="text-navy">Total</span>
-                      <span className="text-navy text-lg">{clp(Math.max(total, 0))}</span>
-                    </div>
-                  </div>
-                </motion.div>
-              )}
+      <div className="grid gap-8 lg:grid-cols-12">
+        <form onSubmit={submit} noValidate className="space-y-6 lg:col-span-7">
+          <Step n={1} title="Tus datos">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Nombre y apellido" error={err('name')} className="sm:col-span-2">
+                <Input name="customer.name" value={form.name} onChange={set('name')} autoComplete="name" />
+              </Field>
+              <Field label="Email" error={err('email')} hint="Aquí te enviamos la confirmación y el seguimiento.">
+                <Input name="customer.email" type="email" inputMode="email" value={form.email} onChange={set('email')} autoComplete="email" />
+              </Field>
+              <Field label="Teléfono" error={err('phone')}>
+                <Input name="customer.phone" type="tel" inputMode="tel" value={form.phone} onChange={set('phone')} autoComplete="tel" placeholder="+56 9 1234 5678" />
+              </Field>
             </div>
-            <motion.div className="mt-4 grid grid-cols-2 gap-3"
-              initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-              <div className="glass rounded-xl p-3 text-center space-y-1">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 mx-auto text-navy/60" fill="none" stroke="currentColor" strokeWidth="1.5"><rect x="1" y="4" width="22" height="16" rx="2"/><path d="M1 10h22"/></svg>
-                <p className="text-[10px] text-stone font-medium">Webpay Plus</p>
-                <p className="text-[9px] text-stone/60">Tarjetas débito/crédito</p>
+          </Step>
+
+          <Step n={2} title="Despacho">
+            <div className="grid gap-5 sm:grid-cols-2">
+              <Field label="Región" error={err('region')}>
+                <Select name="customer.region" value={form.region} onChange={set('region')} autoComplete="address-level1">
+                  <option value="">Selecciona tu región</option>
+                  {REGION_NAMES.map((r) => <option key={r} value={r}>{r}</option>)}
+                </Select>
+              </Field>
+              <Field label="Comuna" error={err('commune')}>
+                <Select name="customer.commune" value={form.commune} onChange={set('commune')} disabled={!form.region} autoComplete="address-level2">
+                  <option value="">{form.region ? 'Selecciona tu comuna' : 'Primero elige región'}</option>
+                  {communes.map((c) => <option key={c} value={c}>{c}</option>)}
+                </Select>
+              </Field>
+              <Field label="Dirección" error={err('address')} className="sm:col-span-2">
+                <Input name="customer.address" value={form.address} onChange={set('address')} autoComplete="street-address" placeholder="Calle, número, depto o local" />
+              </Field>
+              <Field label="Notas para el despacho" optional className="sm:col-span-2">
+                <Textarea name="customer.notes" value={form.notes} onChange={set('notes')} maxLength={300} placeholder="Ej: horario de recepción, dejar en conserjería…" className="min-h-[80px]" />
+              </Field>
+            </div>
+            {quote?.shipping !== undefined && quote?.shipping !== null && (
+              <p className="mt-5 rounded-2xl bg-bone px-4 py-3 text-sm">
+                Envío a {form.region}: <strong className="tabular">{quote.shipping === 0 ? 'Gratis' : formatCLP(quote.shipping)}</strong>
+              </p>
+            )}
+          </Step>
+
+          <Step n={3} title="Documento tributario">
+            <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label="Tipo de documento">
+              {[
+                ['boleta', 'Boleta', 'Compra personal'],
+                ['factura', 'Factura', 'Para tu empresa o negocio'],
+              ].map(([value, label, text]) => (
+                <label key={value} className={`cursor-pointer rounded-2xl border p-4 transition-all duration-200 ${form.documentType === value ? 'border-ink ring-1 ring-ink' : 'border-sand-300 hover:border-ink/40'}`}>
+                  <input type="radio" className="sr-only" name="documentType" value={value} checked={form.documentType === value} onChange={set('documentType')} />
+                  <span className="block font-medium">{label}</span>
+                  <span className="block text-xs text-muted">{text}</span>
+                </label>
+              ))}
+            </div>
+            {form.documentType === 'factura' && (
+              <div className="mt-5 grid gap-5 sm:grid-cols-2">
+                <Field label="RUT empresa" error={err('rut')}>
+                  <Input name="customer.rut" value={form.rut} onChange={set('rut')} onBlur={() => form.rut && setForm((f) => ({ ...f, rut: formatRut(f.rut) }))} placeholder="76.123.456-7" />
+                </Field>
+                <Field label="Razón social" error={err('businessName')}>
+                  <Input name="customer.businessName" value={form.businessName} onChange={set('businessName')} autoComplete="organization" />
+                </Field>
+                <Field label="Giro" error={err('businessActivity')} className="sm:col-span-2">
+                  <Input name="customer.businessActivity" value={form.businessActivity} onChange={set('businessActivity')} placeholder="Ej: Peluquería y barbería" />
+                </Field>
               </div>
-              <div className="glass rounded-xl p-3 text-center space-y-1">
-                <svg viewBox="0 0 24 24" className="w-5 h-5 mx-auto text-navy/60" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                <p className="text-[10px] text-stone font-medium">Compra Segura</p>
-                <p className="text-[9px] text-stone/60">Datos protegidos</p>
+            )}
+          </Step>
+
+          <Step n={4} title="Pago">
+            <div className="flex items-center justify-between gap-4 rounded-2xl border border-ink bg-white p-4 ring-1 ring-ink">
+              <div>
+                <p className="font-medium">Mercado Pago</p>
+                <p className="text-xs text-muted">Tarjeta de crédito, débito y otros medios de Mercado Pago</p>
               </div>
-            </motion.div>
+              <span className="rounded-lg bg-[#00B1EA] px-2.5 py-1 text-xs font-bold text-white">mercado pago</span>
+            </div>
+            {paymentsOff && (
+              <p className="mt-4 flex gap-2 rounded-2xl bg-warning/10 p-4 text-sm text-warning" role="alert">
+                <AlertCircle size={16} className="mt-0.5 flex-none" aria-hidden="true" />
+                <span>
+                  Los pagos en línea están en mantención. {wa ? <a href={wa} className="font-medium underline" target="_blank" rel="noopener noreferrer">Escríbenos por WhatsApp</a> : 'Escríbenos'} y te ayudamos a completar tu compra.
+                </span>
+              </p>
+            )}
+            {formError && (
+              <p className="mt-4 flex gap-2 rounded-2xl bg-danger/10 p-4 text-sm text-danger" role="alert">
+                <AlertCircle size={16} className="mt-0.5 flex-none" aria-hidden="true" /> {formError}
+              </p>
+            )}
+            <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={Boolean(blocked) || paymentsOff || loading}>
+              {submitting ? 'Conectando con Mercado Pago…' : `Pagar ${quote ? formatCLP(quote.total) : ''} con Mercado Pago`}
+            </Button>
+            <p className="mt-3 text-center text-xs text-muted">
+              Al pagar aceptas los <a href="/terminos" className="underline">términos y condiciones</a>. Reservamos tu stock mientras completas el pago.
+            </p>
+          </Step>
+        </form>
+
+        <div className="lg:col-span-5">
+          <div className="space-y-6 lg:sticky lg:top-24">
+            <CheckoutSummary
+              items={items}
+              quote={quote}
+              loading={loading}
+              coupon={coupon}
+              onApplyCoupon={setCoupon}
+              onRemoveCoupon={() => setCoupon(null)}
+            />
+            <div className="rounded-4xl border border-sand p-6">
+              <TrustBadges stacked />
+            </div>
           </div>
         </div>
       </div>

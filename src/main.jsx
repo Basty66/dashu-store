@@ -1,16 +1,16 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
+import { MotionConfig } from 'framer-motion'
 import App from './App'
-import { CartProvider } from './context/CartContext'
 import './index.css'
 
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
+createRoot(document.getElementById('root')).render(
+  <StrictMode>
     <BrowserRouter>
-      <CartProvider>
+      <MotionConfig reducedMotion="user">
         <App />
-      </CartProvider>
+      </MotionConfig>
     </BrowserRouter>
-  </React.StrictMode>
+  </StrictMode>,
 )

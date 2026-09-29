@@ -1,138 +1,246 @@
-import { prisma } from '../lib/config/prisma.js'
-import { requireAdmin, generateToken } from '../lib/config/auth.js'
+import { z } from 'zod'
+import { prisma } from '../lib/prisma.js'
+import { handler, pathSegments, methodNotAllowed, body, parseId, HttpError } from '../lib/http.js'
+import { checkPassword, startSession, endSession, readSession, requireAdmin } from '../lib/auth.js'
+import { changeStatus, releaseExpiredOrders } from '../lib/orders.js'
+import { listProducts, createProduct, updateProduct, deleteProduct, saveImage } from '../lib/catalog.js'
+import { ORDER_STATUS, PAID_STATUSES } from '../shared/orderStatus.js'
 
-function setCors(res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-}
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
-export default async function handler(req, res) {
-  setCors(res)
-  if (req.method === 'OPTIONS') return res.status(200).end()
-
-  const { pathname } = new URL(req.url, 'http://localhost')
-  const segments = pathname.replace(/^\/api\/admin\/?/, '').split('/').filter(Boolean)
-
-  try {
-    // POST /api/admin/auth
-    if (segments[0] === 'auth' && req.method === 'POST') {
-      const { password } = req.body
-      const adminPassword = process.env.ADMIN_PASSWORD
-      if (!adminPassword) return res.status(500).json({ error: 'ADMIN_PASSWORD no configurada' })
-      if (password !== adminPassword) return res.status(401).json({ error: 'Contraseña incorrecta' })
-      const token = generateToken()
-      return res.status(200).json({ token, expiresAt: Date.now() + 24 * 60 * 60 * 1000 })
-    }
-
-    if (!requireAdmin(req, res)) return
-
-    // /api/admin/coupons/:id
-    if (segments[0] === 'coupons') {
-      const id = segments[1] ? parseInt(segments[1]) : null
-      if (id && !isNaN(id)) {
-        if (req.method === 'PATCH') {
-          const allowed = ['value', 'minTotal', 'maxUses', 'expiresAt', 'isActive', 'type']
-          const data = {}
-          for (const k of allowed) {
-            if (req.body[k] !== undefined) {
-              if (k === 'expiresAt') data[k] = req.body[k] ? new Date(req.body[k]) : null
-              else if (k === 'isActive') data[k] = Boolean(req.body[k])
-              else if (k === 'type') data[k] = req.body[k]
-              else data[k] = Number(req.body[k])
-            }
-          }
-          const coupon = await prisma.coupon.update({ where: { id }, data })
-          return res.status(200).json(coupon)
-        }
-        if (req.method === 'DELETE') {
-          await prisma.coupon.delete({ where: { id } })
-          return res.status(200).json({ success: true })
-        }
-        return res.status(405).json({ error: 'Method not allowed' })
-      }
-      if (req.method === 'GET') {
-        const coupons = await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } })
-        return res.status(200).json(coupons)
-      }
-      if (req.method === 'POST') {
-        const { code, type, value, minTotal, maxUses, expiresAt } = req.body
-        if (!code || !type || value === undefined) return res.status(400).json({ error: 'Faltan campos requeridos' })
-        const exists = await prisma.coupon.findUnique({ where: { code: code.toUpperCase() } })
-        if (exists) return res.status(400).json({ error: 'El código ya existe' })
-        const coupon = await prisma.coupon.create({
-          data: { code: code.toUpperCase(), type, value: Number(value), minTotal: Number(minTotal || 0), maxUses: maxUses ? Number(maxUses) : null, expiresAt: expiresAt ? new Date(expiresAt) : null },
-        })
-        return res.status(201).json(coupon)
-      }
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-
-    // /api/admin/orders/:id
-    if (segments[0] === 'orders') {
-      const id = segments[1] ? parseInt(segments[1]) : null
-      if (id && !isNaN(id) && req.method === 'PATCH') {
-          const allowed = ['status']
-          const data = {}
-          for (const k of allowed) {
-            if (req.body[k] !== undefined) data[k] = req.body[k]
-          }
-          if (data.status && !['Pendiente', 'Pagada', 'En preparación', 'En tránsito', 'Entregado', 'Rechazado'].includes(data.status)) {
-            return res.status(400).json({ error: 'Estado no válido' })
-          }
-          const order = await prisma.order.update({ where: { id }, data })
-        return res.status(200).json(order)
-      }
-      if (req.method === 'GET') {
-        const orders = await prisma.order.findMany({ include: { items: true }, orderBy: { createdAt: 'desc' } })
-        return res.status(200).json(orders)
-      }
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-
-    // /api/admin/reviews/:id
-    if (segments[0] === 'reviews') {
-      const id = segments[1] ? parseInt(segments[1]) : null
-      if (id && !isNaN(id)) {
-        if (req.method === 'PATCH') {
-          const { isApproved } = req.body
-          const review = await prisma.review.update({
-            where: { id },
-            data: { isApproved: isApproved !== undefined ? Boolean(isApproved) : undefined },
-          })
-          return res.status(200).json(review)
-        }
-        if (req.method === 'DELETE') {
-          await prisma.review.delete({ where: { id } })
-          return res.status(200).json({ success: true })
-        }
-        return res.status(405).json({ error: 'Method not allowed' })
-      }
-      if (req.method === 'GET') {
-        const reviews = await prisma.review.findMany({ orderBy: { createdAt: 'desc' } })
-        return res.status(200).json(reviews)
-      }
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-
-    // /api/admin/messages
-    if (segments[0] === 'messages') {
-      if (req.method === 'PATCH' || (req.method === 'POST' && req.body?.action === 'read')) {
-        const id = segments[1] ? parseInt(segments[1]) : req.body?.id
-        if (id && !isNaN(id)) {
-          const msg = await prisma.contactMessage.update({ where: { id }, data: { read: true } })
-          return res.status(200).json(msg)
-        }
-      }
-      if (req.method === 'GET') {
-        const messages = await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } })
-        return res.status(200).json(messages)
-      }
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-
-    return res.status(404).json({ error: 'Not found' })
-  } catch (error) {
-    return res.status(500).json({ error: error.message })
+// ---------- Sesión ----------
+async function session(req, res) {
+  if (req.method === 'GET') return res.status(200).json({ authenticated: Boolean(readSession(req)) })
+  if (req.method === 'DELETE') {
+    endSession(res)
+    return res.status(200).json({ ok: true })
   }
+  if (req.method === 'POST') {
+    const { password } = body(req)
+    if (!checkPassword(password)) {
+      await sleep(700)
+      throw new HttpError(401, 'Contraseña incorrecta')
+    }
+    startSession(res)
+    return res.status(200).json({ authenticated: true })
+  }
+  return methodNotAllowed(res)
 }
+
+// ---------- Métricas ----------
+async function stats(res) {
+  await releaseExpiredOrders()
+  const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000)
+  const [paid, byStatus, lowStock, recent, recentItems] = await Promise.all([
+    prisma.order.aggregate({ where: { status: { in: PAID_STATUSES } }, _sum: { total: true }, _count: true }),
+    prisma.order.groupBy({ by: ['status'], _count: true }),
+    prisma.product.findMany({ where: { isActive: true, stock: { lt: 40 } }, select: { id: true, title: true, stock: true } }),
+    prisma.order.findMany({
+      where: { status: { in: PAID_STATUSES }, paidAt: { gte: since } },
+      select: { total: true, paidAt: true },
+    }),
+    prisma.orderItem.findMany({
+      where: { order: { status: { in: PAID_STATUSES } } },
+      select: { packUnits: true, quantity: true },
+    }),
+  ])
+
+  const days = []
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date()
+    d.setHours(0, 0, 0, 0)
+    d.setDate(d.getDate() - i)
+    days.push({ date: d.toISOString().slice(0, 10), total: 0, orders: 0 })
+  }
+  for (const order of recent) {
+    const key = new Date(order.paidAt).toISOString().slice(0, 10)
+    const day = days.find((d) => d.date === key)
+    if (day) {
+      day.total += order.total
+      day.orders += 1
+    }
+  }
+
+  const counts = Object.fromEntries(byStatus.map((s) => [s.status, s._count]))
+  return res.status(200).json({
+    revenue: paid._sum.total || 0,
+    paidOrders: paid._count,
+    revenue30d: recent.reduce((s, o) => s + o.total, 0),
+    unitsSold: recentItems.reduce((s, i) => s + i.packUnits * i.quantity, 0),
+    toShip: (counts.PAGADO || 0) + (counts.PREPARANDO || 0),
+    awaitingPayment: counts.PENDIENTE_PAGO || 0,
+    counts,
+    lowStock,
+    days,
+  })
+}
+
+// ---------- Pedidos ----------
+const statusSchema = z.object({
+  status: z.enum(Object.keys(ORDER_STATUS)),
+  courier: z.string().max(30).optional(),
+  trackingNumber: z.string().max(60).optional(),
+  trackingUrl: z.string().max(500).optional(),
+  note: z.string().max(500).optional(),
+  notify: z.boolean().optional(),
+})
+
+async function orders(req, res, id, action) {
+  if (!id) {
+    if (req.method !== 'GET') return methodNotAllowed(res)
+    await releaseExpiredOrders()
+    const { status, q } = req.query || {}
+    const search = String(q || '').trim()
+    const where = {
+      ...(status && status !== 'all' ? { status: String(status) } : {}),
+      ...(search
+        ? {
+            OR: [
+              { orderNumber: { contains: search.toUpperCase() } },
+              { customerName: { contains: search, mode: 'insensitive' } },
+              { customerEmail: { contains: search, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
+    }
+    const list = await prisma.order.findMany({
+      where,
+      orderBy: { createdAt: 'desc' },
+      take: 200,
+      include: { items: true },
+    })
+    return res.status(200).json(list)
+  }
+
+  const orderId = parseId(id)
+  if (action === 'notes' && req.method === 'POST') {
+    const { note } = z.object({ note: z.string().trim().min(1).max(500) }).parse(body(req))
+    await prisma.orderEvent.create({ data: { orderId, status: 'NOTA_INTERNA', note } })
+  } else if (req.method === 'PATCH') {
+    const { status, ...options } = statusSchema.parse(body(req))
+    await changeStatus(orderId, status, options, 'admin')
+  } else if (req.method !== 'GET') {
+    return methodNotAllowed(res)
+  }
+
+  const order = await prisma.order.findUnique({
+    where: { id: orderId },
+    include: { items: true, events: { orderBy: { createdAt: 'asc' } } },
+  })
+  if (!order) throw new HttpError(404, 'Pedido no encontrado')
+  return res.status(200).json(order)
+}
+
+// ---------- Productos ----------
+async function products(req, res, id) {
+  if (!id) {
+    if (req.method === 'GET') return res.status(200).json(await listProducts({ includeInactive: true }))
+    if (req.method === 'POST') return res.status(201).json(await createProduct(body(req)))
+    return methodNotAllowed(res)
+  }
+  const productId = parseId(id)
+  if (req.method === 'PATCH') return res.status(200).json(await updateProduct(productId, body(req)))
+  if (req.method === 'DELETE') return res.status(200).json(await deleteProduct(productId))
+  return methodNotAllowed(res)
+}
+
+// ---------- Cupones ----------
+const couponSchema = z
+  .object({
+    code: z.string().trim().toUpperCase().regex(/^[A-Z0-9-]{3,30}$/, 'Usa 3 a 30 letras, números o guiones'),
+    type: z.enum(['percentage', 'fixed']),
+    value: z.number().int().min(1),
+    minTotal: z.number().int().min(0).default(0),
+    maxUses: z.number().int().min(1).nullable().default(null),
+    expiresAt: z.string().nullable().default(null),
+    isActive: z.boolean().default(true),
+  })
+  .refine((c) => c.type !== 'percentage' || c.value <= 90, { message: 'El porcentaje máximo es 90%', path: ['value'] })
+
+function couponData(input) {
+  const data = couponSchema.parse(input)
+  return { ...data, expiresAt: data.expiresAt ? new Date(`${data.expiresAt}T23:59:59-04:00`) : null }
+}
+
+async function coupons(req, res, id) {
+  if (!id) {
+    if (req.method === 'GET') return res.status(200).json(await prisma.coupon.findMany({ orderBy: { createdAt: 'desc' } }))
+    if (req.method === 'POST') {
+      const data = couponData(body(req))
+      if (await prisma.coupon.findUnique({ where: { code: data.code } })) {
+        throw new HttpError(400, 'Ese código ya existe', { fields: { code: 'Ya existe' } })
+      }
+      return res.status(201).json(await prisma.coupon.create({ data }))
+    }
+    return methodNotAllowed(res)
+  }
+  const couponId = parseId(id)
+  if (req.method === 'PATCH') {
+    const input = body(req)
+    if (Object.keys(input).length === 1 && typeof input.isActive === 'boolean') {
+      return res.status(200).json(await prisma.coupon.update({ where: { id: couponId }, data: { isActive: input.isActive } }))
+    }
+    const { code: _code, ...data } = couponData(input)
+    return res.status(200).json(await prisma.coupon.update({ where: { id: couponId }, data }))
+  }
+  if (req.method === 'DELETE') {
+    await prisma.coupon.delete({ where: { id: couponId } })
+    return res.status(200).json({ ok: true })
+  }
+  return methodNotAllowed(res)
+}
+
+// ---------- Reseñas y mensajes ----------
+async function reviews(req, res, id) {
+  if (!id) {
+    if (req.method !== 'GET') return methodNotAllowed(res)
+    return res.status(200).json(await prisma.review.findMany({ orderBy: { createdAt: 'desc' } }))
+  }
+  const reviewId = parseId(id)
+  if (req.method === 'PATCH') {
+    const { isApproved } = z.object({ isApproved: z.boolean() }).parse(body(req))
+    return res.status(200).json(await prisma.review.update({ where: { id: reviewId }, data: { isApproved } }))
+  }
+  if (req.method === 'DELETE') {
+    await prisma.review.delete({ where: { id: reviewId } })
+    return res.status(200).json({ ok: true })
+  }
+  return methodNotAllowed(res)
+}
+
+async function messages(req, res, id) {
+  if (!id) {
+    if (req.method !== 'GET') return methodNotAllowed(res)
+    return res.status(200).json(await prisma.contactMessage.findMany({ orderBy: { createdAt: 'desc' } }))
+  }
+  const messageId = parseId(id)
+  if (req.method === 'PATCH') {
+    const { read } = z.object({ read: z.boolean() }).parse(body(req))
+    return res.status(200).json(await prisma.contactMessage.update({ where: { id: messageId }, data: { read } }))
+  }
+  if (req.method === 'DELETE') {
+    await prisma.contactMessage.delete({ where: { id: messageId } })
+    return res.status(200).json({ ok: true })
+  }
+  return methodNotAllowed(res)
+}
+
+export default handler(async (req, res) => {
+  res.setHeader('Cache-Control', 'no-store')
+  const [section, id, action] = pathSegments(req, /^\/api\/admin\/?/)
+  if (section === 'session') return session(req, res)
+
+  requireAdmin(req)
+  switch (section) {
+    case 'stats': return stats(res)
+    case 'orders': return orders(req, res, id, action)
+    case 'products': return products(req, res, id)
+    case 'images':
+      if (req.method !== 'POST') return methodNotAllowed(res)
+      return res.status(201).json(await saveImage(body(req).dataUrl))
+    case 'coupons': return coupons(req, res, id)
+    case 'reviews': return reviews(req, res, id)
+    case 'messages': return messages(req, res, id)
+    default: throw new HttpError(404, 'No encontrado')
+  }
+})

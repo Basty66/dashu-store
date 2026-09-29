@@ -1,65 +1,12 @@
-import { prisma } from '../../lib/config/prisma.js'
-import { requireAdmin } from '../../lib/config/auth.js'
+import { handler, pathSegments, methodNotAllowed } from '../../lib/http.js'
+import { listProducts, getProduct } from '../../lib/catalog.js'
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PATCH, DELETE, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization')
-  if (req.method === 'OPTIONS') return res.status(200).end()
-
-  const { pathname } = new URL(req.url, 'http://localhost')
-  const segments = pathname.replace(/^\/api\/products\/?/, '').split('/').filter(Boolean)
-  const id = segments[0] ? parseInt(segments[0]) : null
-
-  try {
-    if (id && !isNaN(id)) {
-      if (req.method === 'GET') {
-        const product = await prisma.product.findUnique({ where: { id } })
-        if (!product) return res.status(404).json({ error: 'Not found' })
-        return res.status(200).json(product)
-      }
-      if (req.method === 'PATCH') {
-        if (!requireAdmin(req, res)) return
-        const allowed = ['title', 'description', 'category', 'price', 'offerPrice', 'stock', 'images']
-        const data = {}
-        for (const k of allowed) {
-          if (req.body[k] !== undefined) data[k] = k === 'price' || k === 'offerPrice' || k === 'stock' ? Number(req.body[k]) : req.body[k]
-        }
-        if (data.price !== undefined && data.price < 1) return res.status(400).json({ error: 'El precio debe ser mayor a 0' })
-        if (data.stock !== undefined && data.stock < 0) return res.status(400).json({ error: 'El stock no puede ser negativo' })
-        if (data.offerPrice !== undefined && data.offerPrice < 0) return res.status(400).json({ error: 'El precio de oferta no puede ser negativo' })
-        const product = await prisma.product.update({ where: { id }, data })
-        return res.status(200).json(product)
-      }
-      if (req.method === 'DELETE') {
-        if (!requireAdmin(req, res)) return
-        await prisma.product.delete({ where: { id } })
-        return res.status(200).json({ success: true })
-      }
-      return res.status(405).json({ error: 'Method not allowed' })
-    }
-
-    if (req.method === 'GET') {
-      const { category } = req.query
-      const where = category ? { category } : {}
-      const products = await prisma.product.findMany({ where, orderBy: { createdAt: 'desc' } })
-      return res.status(200).json(products)
-    }
-    if (req.method === 'POST') {
-      if (!requireAdmin(req, res)) return
-      const { title, description, category, price, offerPrice, stock, images } = req.body
-      if (!title || !description || !price) return res.status(400).json({ error: 'Faltan campos requeridos' })
-      const p = Number(price); const o = offerPrice ? Number(offerPrice) : null; const s = Number(stock ?? 0)
-      if (p < 1) return res.status(400).json({ error: 'El precio debe ser mayor a 0' })
-      if (s < 0) return res.status(400).json({ error: 'El stock no puede ser negativo' })
-      if (o !== null && o < 0) return res.status(400).json({ error: 'El precio de oferta no puede ser negativo' })
-      const product = await prisma.product.create({
-        data: { title, description, category: category || 'alisado', price: p, offerPrice: o, stock: s, images: images || [] }
-      })
-      return res.status(201).json(product)
-    }
-    return res.status(405).json({ error: 'Method not allowed' })
-  } catch (error) {
-    return res.status(500).json({ error: error.message })
-  }
-}
+// GET /api/products            -> catálogo activo con sus formatos de venta
+// GET /api/products/:slug|:id  -> detalle
+export default handler(async (req, res) => {
+  if (req.method !== 'GET') return methodNotAllowed(res)
+  const [slugOrId] = pathSegments(req, /^\/api\/products\/?/)
+  res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=10, stale-while-revalidate=60')
+  if (slugOrId) return res.status(200).json(await getProduct(slugOrId))
+  return res.status(200).json(await listProducts())
+})

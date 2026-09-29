@@ -1,30 +1,29 @@
-import { prisma } from '../../lib/config/prisma.js'
+import { z } from 'zod'
+import { prisma } from '../../lib/prisma.js'
+import { handler, methodNotAllowed, body } from '../../lib/http.js'
 
-export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*')
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-  if (req.method === 'OPTIONS') return res.status(200).end()
+const reviewSchema = z.object({
+  customerName: z.string().trim().min(2, 'Ingresa tu nombre').max(60),
+  customerEmail: z.string().trim().email('Email no válido').max(120).optional().or(z.literal('')),
+  rating: z.number().int().min(1).max(5),
+  comment: z.string().trim().min(10, 'Cuéntanos un poco más (mín. 10 caracteres)').max(800),
+})
 
-  try {
-    if (req.method === 'GET') {
-      const reviews = await prisma.review.findMany({
-        where: { isApproved: true },
-        orderBy: { createdAt: 'desc' },
-      })
-      return res.status(200).json(reviews)
-    }
-    if (req.method === 'POST') {
-      const { customerName, customerEmail, rating, comment } = req.body
-      if (!customerName || !rating || !comment) return res.status(400).json({ error: 'Faltan campos requeridos' })
-      if (rating < 1 || rating > 5) return res.status(400).json({ error: 'Rating debe ser entre 1 y 5' })
-      const review = await prisma.review.create({
-        data: { customerName, customerEmail, rating: Number(rating), comment },
-      })
-      return res.status(201).json(review)
-    }
-    return res.status(405).json({ error: 'Method not allowed' })
-  } catch (error) {
-    return res.status(500).json({ error: error.message })
+export default handler(async (req, res) => {
+  if (req.method === 'GET') {
+    const reviews = await prisma.review.findMany({
+      where: { isApproved: true },
+      orderBy: { createdAt: 'desc' },
+      take: 30,
+      select: { id: true, customerName: true, rating: true, comment: true, createdAt: true },
+    })
+    res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60, stale-while-revalidate=300')
+    return res.status(200).json(reviews)
   }
-}
+  if (req.method === 'POST') {
+    const data = reviewSchema.parse(body(req))
+    await prisma.review.create({ data: { ...data, customerEmail: data.customerEmail || null } })
+    return res.status(201).json({ ok: true })
+  }
+  return methodNotAllowed(res)
+})

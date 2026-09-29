@@ -1,124 +1,74 @@
 import { useState } from 'react'
-import { motion } from 'framer-motion'
-import { Link } from 'react-router-dom'
-import { ArrowLeft, Send, Mail, Clock, CheckCircle } from 'lucide-react'
+import { Mail, MessageCircle, Clock, CheckCircle2 } from 'lucide-react'
+import { STORE } from '@shared/store.js'
+import { api } from '../lib/api'
+import { whatsappLink } from '../lib/contact'
+import { Button } from '../components/atoms/Button'
+import { Input, Select, Textarea } from '../components/atoms/Input'
+import { Field } from '../components/molecules/Field'
+import { PageShell } from '../components/templates/PageShell'
+
+const empty = { name: '', email: '', phone: '', subject: 'Consulta sobre productos', message: '' }
 
 export default function Contact() {
-  const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
-  const [loading, setLoading] = useState(false)
-  const [done, setDone] = useState(false)
-  const [error, setError] = useState('')
+  const [form, setForm] = useState(empty)
+  const [state, setState] = useState({ sending: false, done: false, error: '', fields: {} })
+  const wa = whatsappLink()
+  const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
-  const [sentMsg, setSentMsg] = useState(null)
-
-  const handleSubmit = async (e) => {
+  async function submit(e) {
     e.preventDefault()
-    if (!form.name || !form.email || !form.message) return
-    setLoading(true)
-    setError('')
+    setState({ sending: true, done: false, error: '', fields: {} })
     try {
-      const r = await fetch('/api/contact', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form),
-      })
-      if (!r.ok) throw new Error('Error al enviar')
-      setSentMsg({ ...form, date: new Date().toLocaleString('es-CL') })
-      setDone(true)
-    } catch {
-      setError('Error al enviar el mensaje. Intenta de nuevo.')
+      await api('/contact', { method: 'POST', body: form })
+      setState({ sending: false, done: true, error: '', fields: {} })
+      setForm(empty)
+    } catch (error) {
+      setState({ sending: false, done: false, error: error.message, fields: error.fields })
     }
-    setLoading(false)
   }
 
   return (
-    <div className="min-h-screen pt-24 pb-16">
-      <div className="max-w-3xl mx-auto px-6 md:px-20">
-        <Link to="/" className="inline-flex items-center gap-2 text-sm text-stone hover:text-navy transition-colors mb-8">
-          <ArrowLeft size={14} /> Volver al inicio
-        </Link>
-        <motion.div initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }}>
-          <span className="label text-xs text-gold">Contacto</span>
-          <h1 className="display-md text-navy mt-2 mb-4">Hablemos</h1>
-          <p className="text-sm text-stone mb-10 max-w-lg">¿Tienes dudas sobre nuestros productos, tu pedido o quieres ser distribuidor? Escríbenos y te respondemos a la brevedad.</p>
-
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
-            <div className="md:col-span-2 space-y-4">
-              <div className="glass rounded-xl p-5 flex items-start gap-3">
-                <Mail size={16} className="text-gold mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-navy">Email</p>
-                  <p className="text-xs text-stone">contacto@dashu.store</p>
-                </div>
-              </div>
-              <div className="glass rounded-xl p-5 flex items-start gap-3">
-                <Clock size={16} className="text-gold mt-0.5" />
-                <div>
-                  <p className="text-sm font-medium text-navy">Horario de atención</p>
-                  <p className="text-xs text-stone">Lunes a viernes, 10:00 - 18:00</p>
-                </div>
-              </div>
+    <PageShell eyebrow="Contacto" title="Hablemos" description="Consultas, pedidos por volumen o ventas para tu negocio. Te respondemos a la brevedad." width="max-w-6xl">
+      <div className="grid gap-8 lg:grid-cols-12">
+        <aside className="space-y-4 lg:col-span-4">
+          {[
+            [Mail, 'Email', <a key="m" href={`mailto:${STORE.email}`} className="underline decoration-gold underline-offset-4">{STORE.email}</a>],
+            wa && [MessageCircle, 'WhatsApp', <a key="w" href={wa} target="_blank" rel="noopener noreferrer" className="underline decoration-gold underline-offset-4">Abrir conversación</a>],
+            [Clock, 'Horario', STORE.hours],
+          ].filter(Boolean).map(([Icon, title, content]) => (
+            <div key={title} className="flex gap-4 rounded-3xl border border-sand bg-paper p-5">
+              <Icon size={20} className="mt-0.5 text-gold-deep" aria-hidden="true" />
+              <div className="text-sm"><p className="font-medium">{title}</p><div className="mt-0.5 text-muted">{content}</div></div>
             </div>
+          ))}
+        </aside>
 
-            <div className="md:col-span-3">
-              {done ? (
-                <motion.div initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}
-                  className="glass rounded-xl p-8 space-y-4">
-                  <div className="text-center space-y-2">
-                    <CheckCircle size={32} className="mx-auto text-green-600" />
-                    <p className="text-sm font-medium text-navy">Mensaje enviado</p>
-                    <p className="text-xs text-stone">Te responderemos a la brevedad.</p>
-                  </div>
-                  <div className="border border-navy/10 rounded-xl p-4 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-stone">Nombre</span>
-                      <span className="text-navy font-medium">{sentMsg?.name}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-stone">Email</span>
-                      <span className="text-navy font-medium">{sentMsg?.email}</span>
-                    </div>
-                    {sentMsg?.subject && <div className="flex justify-between">
-                      <span className="text-stone">Asunto</span>
-                      <span className="text-navy font-medium">{sentMsg.subject}</span>
-                    </div>}
-                    <div className="border-t border-navy/5 pt-2 mt-2">
-                      <p className="text-stone mb-1">Mensaje</p>
-                      <p className="text-navy">{sentMsg?.message}</p>
-                    </div>
-                    <p className="text-2xs text-stone/60 text-right">{sentMsg?.date}</p>
-                  </div>
-                  <button onClick={() => { setDone(false); setSentMsg(null); setForm({ name: '', email: '', subject: '', message: '' }) }}
-                    className="text-xs text-gold underline hover:no-underline transition-all block mx-auto">Enviar otro</button>
-                </motion.div>
-              ) : (
-                <form onSubmit={handleSubmit} className="glass rounded-xl p-6 space-y-4">
-                  {error && <p className="text-xs text-red-500">{error}</p>}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <input type="text" placeholder="Tu nombre" value={form.name}
-                      onChange={e => setForm(f => ({ ...f, name: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl border border-navy/10 bg-white text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 transition-all" required />
-                    <input type="email" placeholder="Tu email" value={form.email}
-                      onChange={e => setForm(f => ({ ...f, email: e.target.value }))}
-                      className="w-full px-4 py-3 rounded-xl border border-navy/10 bg-white text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 transition-all" required />
-                  </div>
-                  <input type="text" placeholder="Asunto (opcional)" value={form.subject}
-                    onChange={e => setForm(f => ({ ...f, subject: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-navy/10 bg-white text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 transition-all" />
-                  <textarea placeholder="Tu mensaje..." value={form.message}
-                    onChange={e => setForm(f => ({ ...f, message: e.target.value }))}
-                    className="w-full px-4 py-3 rounded-xl border border-navy/10 bg-white text-sm focus:outline-none focus:border-gold focus:ring-1 focus:ring-gold/30 transition-all resize-none h-32" required />
-                  <motion.button type="submit" disabled={loading}
-                    className="btn-primary w-full flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.01 }} whileTap={{ scale: 0.99 }}>
-                    {loading ? 'Enviando...' : 'Enviar Mensaje'} <Send size={14} />
-                  </motion.button>
-                </form>
-              )}
+        <div className="lg:col-span-8">
+          {state.done ? (
+            <div className="flex flex-col items-center gap-3 rounded-4xl border border-sand bg-paper p-12 text-center">
+              <CheckCircle2 size={36} className="text-success" aria-hidden="true" />
+              <p className="font-display text-2xl font-bold">Mensaje enviado</p>
+              <p className="text-muted">Te responderemos pronto a tu email.</p>
+              <Button variant="secondary" size="sm" className="mt-3" onClick={() => setState((s) => ({ ...s, done: false }))}>Enviar otro mensaje</Button>
             </div>
-          </div>
-        </motion.div>
+          ) : (
+            <form onSubmit={submit} noValidate className="grid gap-5 rounded-4xl border border-sand bg-paper p-6 sm:grid-cols-2 sm:p-8">
+              <Field label="Nombre" error={state.fields.name}><Input value={form.name} onChange={set('name')} autoComplete="name" /></Field>
+              <Field label="Email" error={state.fields.email}><Input type="email" value={form.email} onChange={set('email')} autoComplete="email" /></Field>
+              <Field label="Teléfono" optional><Input type="tel" value={form.phone} onChange={set('phone')} autoComplete="tel" /></Field>
+              <Field label="Motivo">
+                <Select value={form.subject} onChange={set('subject')}>
+                  {['Consulta sobre productos', 'Mi pedido', 'Venta por volumen / mayorista', 'Otro'].map((s) => <option key={s}>{s}</option>)}
+                </Select>
+              </Field>
+              <Field label="Mensaje" error={state.fields.message} className="sm:col-span-2"><Textarea value={form.message} onChange={set('message')} maxLength={3000} /></Field>
+              {state.error && !Object.keys(state.fields).length && <p className="text-sm text-danger sm:col-span-2" role="alert">{state.error}</p>}
+              <div className="sm:col-span-2"><Button type="submit" size="lg" loading={state.sending}>Enviar mensaje</Button></div>
+            </form>
+          )}
+        </div>
       </div>
-    </div>
+    </PageShell>
   )
 }

@@ -1,99 +1,74 @@
-import { useState } from 'react'
-import { Routes, Route, useLocation, Link } from 'react-router-dom'
-import { AnimatePresence, motion } from 'framer-motion'
-import Navbar from './components/Navbar'
-import Footer from './components/Footer'
-import CartDrawer from './components/CartDrawer'
-import CartFly from './components/CartFly'
-import WhatsAppButton from './components/WhatsAppButton'
-import SplashScreen from './components/SplashScreen'
-import { useCart } from './context/CartContext'
+import { Component, Suspense, lazy } from 'react'
+import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { StoreLayout } from './components/templates/StoreLayout'
+import { Button } from './components/atoms/Button'
 import Home from './pages/Home'
-import Checkout from './pages/Checkout'
-import OrderTracking from './pages/OrderTracking'
-import AdminLogin from './pages/AdminLogin'
-import AdminDashboard from './pages/AdminDashboard'
-import Terms from './pages/Terms'
-import Privacy from './pages/Privacy'
-import Returns from './pages/Returns'
-import Contact from './pages/Contact'
-import ProductDetail from './pages/ProductDetail'
-import { Home as HomeIcon } from 'lucide-react'
+import Shop from './pages/Shop'
+import ProductPage from './pages/ProductPage'
+import NotFound from './pages/NotFound'
 
-function PageTransition({ children }) {
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -16 }}
-      transition={{ duration: 0.3, ease: [0.4, 0, 0.2, 1] }}>
-      {children}
-    </motion.div>
-  )
+const Checkout = lazy(() => import('./pages/Checkout'))
+const OrderPage = lazy(() => import('./pages/OrderPage'))
+const TrackOrder = lazy(() => import('./pages/TrackOrder'))
+const Contact = lazy(() => import('./pages/Contact'))
+const Terms = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Terms })))
+const Privacy = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Privacy })))
+const Returns = lazy(() => import('./pages/Legal').then((m) => ({ default: m.Returns })))
+
+const MockPayment = lazy(() => import('./pages/MockPayment'))
+const AdminApp = lazy(() => import('./pages/admin/AdminApp'))
+
+class ErrorBoundary extends Component {
+  state = { error: null }
+  static getDerivedStateFromError(error) {
+    return { error }
+  }
+  componentDidCatch(error, info) {
+    console.error('Error de interfaz', error, info)
+  }
+  render() {
+    if (!this.state.error) return this.props.children
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-bone p-6 text-center">
+        <p className="display-md">Algo salió mal</p>
+        <p className="max-w-sm text-muted">Tuvimos un problema al mostrar esta página. Tu carrito sigue guardado.</p>
+        <Button onClick={() => window.location.reload()}>Recargar</Button>
+      </div>
+    )
+  }
 }
 
-function StockToast() {
-  const { stockAlert } = useCart()
-  if (!stockAlert) return null
-  return (
-    <motion.div initial={{ opacity: 0, y: 20, scale: 0.95 }} animate={{ opacity: 1, y: 0, scale: 1 }}
-      exit={{ opacity: 0, y: -10, scale: 0.95 }} transition={{ duration: 0.2 }}
-      className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[100] bg-red-600 text-white text-sm font-medium px-5 py-3 rounded-xl shadow-2xl shadow-red-600/20">
-      Stock máximo alcanzado para <strong>{stockAlert.name}</strong>
-    </motion.div>
-  )
+function LegacyOrderRedirect() {
+  const { orderNumber } = useParams()
+  return <Navigate to={`/seguimiento?pedido=${orderNumber}`} replace />
 }
+
+const Loading = () => <div className="min-h-[50vh]" aria-busy="true" />
 
 export default function App() {
-  const [splashDone, setSplashDone] = useState(false)
-  const location = useLocation()
-
-  if (!splashDone) {
-    return <SplashScreen onFinish={() => setSplashDone(true)} />
-  }
-
   return (
-    <div className="min-h-screen flex flex-col">
-      <Navbar />
-      <CartDrawer />
-      <CartFly />
-      <WhatsAppButton />
-      <StockToast />
-      <main className="flex-1">
-        <AnimatePresence mode="wait">
-          <PageTransition key={location.pathname}>
-            <Routes location={location}>
-              <Route path="/" element={<Home />} />
-              <Route path="/checkout" element={<Checkout />} />
-              <Route path="/checkout/success" element={<OrderTracking />} />
-              <Route path="/checkout/failure" element={<Checkout />} />
-              <Route path="/checkout/pending" element={<OrderTracking />} />
-              <Route path="/order/:orderNumber" element={<OrderTracking />} />
-              <Route path="/tracking" element={<OrderTracking />} />
-              <Route path="/admin/login" element={<AdminLogin />} />
-              <Route path="/admin" element={<AdminDashboard />} />
-              <Route path="/terminos" element={<Terms />} />
-              <Route path="/privacidad" element={<Privacy />} />
-              <Route path="/devoluciones" element={<Returns />} />
-              <Route path="/contacto" element={<Contact />} />
-              <Route path="/producto/:id" element={<ProductDetail />} />
-              <Route path="*" element={
-                <div className="min-h-screen flex flex-col items-center justify-center text-center px-6">
-                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-4">
-                    <p className="text-6xl font-black text-navy opacity-10">404</p>
-                    <h1 className="text-xl font-bold text-navy">Página no encontrada</h1>
-                    <p className="text-sm text-stone">La página que buscas no existe o fue movida.</p>
-                    <Link to="/" className="btn-primary inline-flex items-center gap-2 text-sm mt-4">
-                      <HomeIcon size={14} /> Volver al Inicio
-                    </Link>
-                  </motion.div>
-                </div>
-              } />
-            </Routes>
-          </PageTransition>
-        </AnimatePresence>
-      </main>
-      <Footer />
-    </div>
+    <ErrorBoundary>
+      <Suspense fallback={<Loading />}>
+        <Routes>
+          <Route element={<StoreLayout />}>
+            <Route index element={<Home />} />
+            <Route path="tienda" element={<Shop />} />
+            <Route path="producto/:slug" element={<ProductPage />} />
+            <Route path="checkout" element={<Checkout />} />
+            <Route path="pedido/:orderNumber" element={<OrderPage />} />
+            <Route path="seguimiento" element={<TrackOrder />} />
+            <Route path="contacto" element={<Contact />} />
+            <Route path="terminos" element={<Terms />} />
+            <Route path="privacidad" element={<Privacy />} />
+            <Route path="devoluciones" element={<Returns />} />
+            {import.meta.env.DEV && <Route path="pago-simulado" element={<MockPayment />} />}
+            <Route path="tracking" element={<Navigate to="/seguimiento" replace />} />
+            <Route path="order/:orderNumber" element={<LegacyOrderRedirect />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
+          <Route path="admin/*" element={<AdminApp />} />
+        </Routes>
+      </Suspense>
+    </ErrorBoundary>
   )
 }

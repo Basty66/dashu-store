@@ -1,6 +1,6 @@
 generator client {
   provider      = "prisma-client-js"
-  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -9,48 +9,114 @@ datasource db {
   directUrl = env("DIRECT_DATABASE_URL")
 }
 
+// Todos los montos se guardan en pesos chilenos enteros (CLP), sin decimales.
+
 model Product {
-  id          Int    @id @default(autoincrement())
+  id          Int         @id @default(autoincrement())
+  slug        String      @unique
   title       String
+  brand       String      @default("DASHU")
+  subtitle    String      @default("")
   description String
-  category    String @default("alisado")
-  price       Int
-  offerPrice  Int?
-  stock       Int    @default(0)
+  howToUse    String      @default("")
+  ingredients String      @default("")
+  contentSize String      @default("")
+  category    String      @default("alisado")
   images      String[]
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  stock       Int         @default(0) // unidades sueltas disponibles
+  isActive    Boolean     @default(true)
+  sortOrder   Int         @default(0)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  packs       Pack[]
   orderItems  OrderItem[]
 }
 
+// Formato de venta: unidad suelta (units = 1) o pack de N unidades.
+model Pack {
+  id        Int     @id @default(autoincrement())
+  productId Int
+  units     Int
+  price     Int // precio total del pack
+  isActive  Boolean @default(true)
+  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, units])
+}
+
 model Order {
-  id              Int         @id @default(autoincrement())
-  orderNumber     String      @unique
-  status          String      @default("Pendiente")
-  total           Int
-  shippingCost    Int         @default(0)
-  discount        Int         @default(0)
-  couponCode      String?
-  paymentMethod   String?
-  paymentId       String?
-  customerName    String
-  customerEmail   String
-  customerPhone   String?
-  shippingRegion  String?
-  shippingCity    String?
-  shippingAddress String?
-  notes           String?
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
-  items           OrderItem[]
+  id               Int          @id @default(autoincrement())
+  orderNumber      String       @unique
+  accessToken      String       @unique
+  status           String       @default("PENDIENTE_PAGO")
+  subtotal         Int
+  shippingCost     Int          @default(0)
+  discount         Int          @default(0)
+  total            Int
+  couponCode       String?
+  paymentMethod    String       @default("mercadopago")
+  paymentStatus    String?
+  mpPreferenceId   String?
+  mpPaymentId      String?
+  paidAt           DateTime?
+  expiresAt        DateTime?
+  stockReleased    Boolean      @default(false)
+  customerName     String
+  customerEmail    String
+  customerPhone    String
+  customerRut      String?
+  documentType     String       @default("boleta")
+  businessName     String?
+  businessActivity String?
+  shippingRegion   String
+  shippingCommune  String
+  shippingAddress  String
+  notes            String?
+  courier          String?
+  trackingNumber   String?
+  trackingUrl      String?
+  shippedAt        DateTime?
+  deliveredAt      DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  items            OrderItem[]
+  events           OrderEvent[]
+
+  @@index([status, expiresAt])
+  @@index([customerEmail])
+}
+
+model OrderItem {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  productId Int?
+  title     String
+  packUnits Int // unidades por pack (1 = suelta)
+  quantity  Int // cantidad de packs
+  unitPrice Int // precio de un pack
+  lineTotal Int
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  product   Product? @relation(fields: [productId], references: [id], onDelete: SetNull)
+}
+
+// Historial visible para el cliente: "Recibimos tu pedido", "En camino con Starken", etc.
+model OrderEvent {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+  order     Order    @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@index([orderId])
 }
 
 model Coupon {
   id        Int       @id @default(autoincrement())
   code      String    @unique
-  type      String    @default("percentage")
-  value     Int
-  minTotal  Int       @default(0)
+  type      String    @default("percentage") // percentage | fixed
+  value     Int // % o monto CLP
+  minTotal  Int       @default(0) // subtotal mínimo CLP
   maxUses   Int?
   usedCount Int       @default(0)
   expiresAt DateTime?
@@ -68,23 +134,21 @@ model Review {
   createdAt     DateTime @default(now())
 }
 
-model OrderItem {
-  id        Int     @id @default(autoincrement())
-  orderId   Int
-  productId Int
-  quantity  Int
-  price     Int
-  title     String
-  order     Order   @relation(fields: [orderId], references: [id])
-  product   Product @relation(fields: [productId], references: [id])
-}
-
 model ContactMessage {
   id        Int      @id @default(autoincrement())
   name      String
   email     String
+  phone     String?
   subject   String
   message   String
   read      Boolean  @default(false)
+  createdAt DateTime @default(now())
+}
+
+// Imágenes subidas desde el admin (ya comprimidas en el navegador). Se sirven en /api/images/:id
+model ProductImage {
+  id        Int      @id @default(autoincrement())
+  data      Bytes
+  mimeType  String
   createdAt DateTime @default(now())
 }
