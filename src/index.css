@@ -5,7 +5,8 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
-    scroll-padding-top: 6rem;
+    /* Compensa el header fijo en anclas (lo usan tanto el navegador como Lenis). */
+    scroll-padding-top: 88px;
   }
   body {
     @apply bg-bone font-sans text-ink antialiased;

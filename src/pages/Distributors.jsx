@@ -8,6 +8,7 @@ import { formatCLP } from '@shared/pricing.js'
 import { formatRut } from '@shared/rut.js'
 import { api } from '../lib/api'
 import { whatsappLink } from '../lib/contact'
+import { scrollToTarget } from '../lib/smoothScroll'
 import { useSeo } from '../hooks/useSeo'
 import { Button } from '../components/atoms/Button'
 import { Input, Select, Textarea } from '../components/atoms/Input'
@@ -58,7 +59,7 @@ export default function Distributors() {
     try {
       await api('/distributors', { method: 'POST', body: form })
       setState({ sending: false, done: { ...form }, error: '' })
-      window.scrollTo({ top: 0, behavior: 'smooth' })
+      scrollToTarget(0)
     } catch (error) {
       setErrors(error.fields || {})
       setState({ sending: false, done: null, error: error.message })

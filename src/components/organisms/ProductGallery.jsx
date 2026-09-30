@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { ChevronLeft, ChevronRight, Expand, X } from 'lucide-react'
+import { useScrollLock } from '../../lib/smoothScroll'
 
 // Galería con miniaturas, zoom al pasar el mouse y visor a pantalla completa.
 export function ProductGallery({ images, title }) {
@@ -9,6 +10,7 @@ export function ProductGallery({ images, title }) {
   const [zoom, setZoom] = useState(null)
   const count = images.length
   const go = useCallback((delta) => setIndex((i) => (i + delta + count) % count), [count])
+  useScrollLock(lightbox)
 
   useEffect(() => {
     if (!lightbox) return
@@ -18,10 +20,8 @@ export function ProductGallery({ images, title }) {
       if (e.key === 'ArrowLeft') go(-1)
     }
     document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
     }
   }, [lightbox, go])
 
