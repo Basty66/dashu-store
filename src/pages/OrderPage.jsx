@@ -12,6 +12,7 @@ import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState, StatusBadge } from '../components/molecules/Feedback'
 import { PriceRows } from '../components/molecules/PriceRows'
 import { OrderTimeline } from '../components/organisms/OrderTimeline'
+import { ThankYouCard } from '../components/organisms/ThankYouCard'
 
 function useCountdown(until) {
   const [now, setNow] = useState(() => Date.now())
@@ -138,6 +139,11 @@ export default function OrderPage() {
 
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
+          {order.status === 'PAGADO' && (
+            <div className="pb-2 pt-2 sm:pb-4">
+              <ThankYouCard name={order.customerName.split(' ')[0]} code={order.orderNumber} />
+            </div>
+          )}
           <div className="rounded-4xl border border-sand bg-paper p-6 sm:p-8">
             <Headline order={order} />
             {order.status === 'PENDIENTE_PAGO' && (

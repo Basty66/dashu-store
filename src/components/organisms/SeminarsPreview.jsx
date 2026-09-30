@@ -12,15 +12,23 @@ export function UpcomingSeminars({ limit = 3 }) {
   const { data, loading } = useSeminars()
   if (!loading && !data?.length) return null
   return (
-    <section id="capacitaciones" className="py-20 lg:py-28">
+    <section id="capacitaciones" className="py-14 sm:py-20 lg:py-28">
       <div className="container-x">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <SectionHeading eyebrow="Capacitaciones" title="Aprende la técnica en vivo" description="Seminarios y clases prácticas de alisado con Tomás Morales en distintas ciudades de Chile." />
-          <Button variant="secondary" to="/capacitaciones">Ver todas las fechas <ArrowRight size={16} aria-hidden="true" /></Button>
+          <Button variant="secondary" to="/capacitaciones" className="hidden sm:inline-flex">Ver todas las fechas <ArrowRight size={16} aria-hidden="true" /></Button>
         </div>
-        <div className="mt-10 space-y-4">
-          {loading ? [0, 1].map((i) => <Skeleton key={i} className="h-36 rounded-4xl" />) : data.slice(0, limit).map((s, i) => <SeminarCard key={s.id} seminar={s} featured={i === 0} />)}
+        {/* En celular: carrusel deslizable (se asoma la siguiente tarjeta). En escritorio: lista. */}
+        <div className="scrollbar-none -mx-4 mt-8 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:mt-10 sm:block sm:space-y-4 sm:overflow-visible sm:px-0 sm:pb-0">
+          {loading
+            ? [0, 1].map((i) => <Skeleton key={i} className="h-72 w-[85%] flex-none rounded-4xl sm:h-36 sm:w-auto" />)
+            : data.slice(0, limit).map((s, i) => (
+              <div key={s.id} className="flex w-[85%] flex-none snap-start sm:block sm:w-auto">
+                <SeminarCard seminar={s} featured={i === 0} />
+              </div>
+            ))}
         </div>
+        <Button variant="secondary" to="/capacitaciones" className="mt-6 w-full sm:hidden">Ver todas las fechas <ArrowRight size={16} aria-hidden="true" /></Button>
       </div>
     </section>
   )

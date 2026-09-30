@@ -25,21 +25,22 @@ export function Hero({ product }) {
         <div className="absolute -left-40 bottom-0 h-[420px] w-[420px] rounded-full bg-navy-600/60 blur-[100px]" />
       </div>
 
-      <div className="container-x relative grid min-h-[min(92svh,860px)] items-center gap-10 pb-16 pt-28 lg:grid-cols-12 lg:pb-20 lg:pt-32">
-        <div className="relative z-10 lg:col-span-6">
-          <motion.div {...rise(0.05)}>
+      {/* En celular el orden es: sello, título, foto, texto, botones y datos. En escritorio: texto | foto. */}
+      <div className="container-x relative grid items-center pb-12 pt-24 lg:min-h-[min(92svh,860px)] lg:grid-cols-12 lg:gap-10 lg:pb-20 lg:pt-32">
+        <div className="contents lg:relative lg:z-10 lg:col-span-6 lg:block">
+          <motion.div className="order-1 lg:order-none" {...rise(0.05)}>
             <Badge tone="light">DASHU · Origen Corea del Sur</Badge>
           </motion.div>
-          <motion.h1 className="display-xl mt-6 text-balance" {...rise(0.15)}>
+          <motion.h1 className="display-xl order-2 mt-5 text-balance lg:order-none lg:mt-6" {...rise(0.15)}>
             Domina el pelo rebelde en{' '}
             <span className="font-serif font-normal italic text-gold" style={{ fontStretch: '100%', letterSpacing: '-0.01em' }}>
               10 minutos.
             </span>
           </motion.h1>
-          <motion.p className="mt-6 max-w-md text-lg leading-relaxed text-paper/70" {...rise(0.25)}>
+          <motion.p className="order-4 mt-2 max-w-md text-base leading-relaxed text-paper/70 sm:text-lg lg:order-none lg:mt-6" {...rise(0.25)}>
             {product ? `${product.brand} ${product.title}` : 'DASHU Down Permanent'}: alisado de origen coreano, sin plancha ni calor. Compra por unidad o en packs para tu barbería o reventa.
           </motion.p>
-          <motion.div className="mt-9 flex flex-col gap-3 sm:flex-row" {...rise(0.35)}>
+          <motion.div className="order-5 mt-7 flex flex-col gap-3 sm:flex-row lg:order-none lg:mt-9" {...rise(0.35)}>
             <Button variant="gold" size="lg" href="#comprar">
               {packs.length ? `Comprar desde ${formatCLP(lowestUnitPrice(packs))} c/u` : 'Comprar ahora'}
               <ArrowDown size={18} aria-hidden="true" />
@@ -48,7 +49,7 @@ export function Hero({ product }) {
               Precios por volumen <ArrowRight size={18} aria-hidden="true" />
             </Button>
           </motion.div>
-          <motion.dl className="mt-12 grid max-w-md grid-cols-3 gap-6 border-t border-white/10 pt-6" {...rise(0.45)}>
+          <motion.dl className="order-6 mt-9 grid max-w-md grid-cols-3 gap-6 border-t border-white/10 pt-6 lg:order-none lg:mt-12" {...rise(0.45)}>
             {[
               ['Acción', '10 min'],
               ['Duración', '3–4 sem'],
@@ -62,9 +63,9 @@ export function Hero({ product }) {
           </motion.dl>
         </div>
 
-        <div className="relative lg:col-span-6">
+        <div className="relative order-3 lg:order-none lg:col-span-6">
           <motion.div
-            className="relative mx-auto aspect-square w-full max-w-[600px]"
+            className="relative mx-auto aspect-square w-full max-w-[320px] sm:max-w-[440px] lg:max-w-[600px]"
             initial={{ opacity: 0, scale: 0.94 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease, delay: 0.2 }}
@@ -91,7 +92,7 @@ export function Hero({ product }) {
             ))}
             {biggest && biggest.units > 1 && (
               <motion.div
-                className="absolute bottom-[4%] right-[4%] rounded-2xl bg-paper px-5 py-4 text-ink shadow-lift"
+                className="absolute bottom-[4%] right-0 rounded-2xl bg-paper px-4 py-3 text-ink shadow-lift sm:right-[4%] sm:px-5 sm:py-4"
                 initial={{ opacity: 0, y: 16 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 1.3, duration: 0.7, ease }}

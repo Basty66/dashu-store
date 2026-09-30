@@ -6,7 +6,7 @@ import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState, EmptyState } from '../components/molecules/Feedback'
 import { SectionHeading } from '../components/molecules/SectionHeading'
 import { Hero, Marquee } from '../components/organisms/Hero'
-import { ProductShowcase } from '../components/organisms/ProductShowcase'
+import { ProductShowcase, ProductBuyBar } from '../components/organisms/ProductShowcase'
 import { VolumePricing } from '../components/organisms/VolumePricing'
 import { Bento } from '../components/organisms/Bento'
 import { BeforeAfter } from '../components/organisms/BeforeAfter'
@@ -44,7 +44,7 @@ export default function Home() {
       <Hero product={product} />
       <Marquee />
 
-      <section id="comprar" className="py-16 lg:py-24">
+      <section id="comprar" className="py-10 sm:py-16 lg:py-24">
         <div className="container-x">
           {loading ? (
             <ShowcaseSkeleton />
@@ -53,7 +53,10 @@ export default function Home() {
           ) : !product ? (
             <EmptyState icon={PackageSearch} title="Estamos reponiendo stock" message="Vuelve pronto o escríbenos para reservar tu pedido." />
           ) : (
-            <ProductShowcase product={product} />
+            <>
+              <ProductShowcase product={product} />
+              <ProductBuyBar product={product} />
+            </>
           )}
         </div>
       </section>

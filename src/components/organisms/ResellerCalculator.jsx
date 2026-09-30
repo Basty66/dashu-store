@@ -24,7 +24,7 @@ export function ResellerCalculator({ product }) {
   const max = Math.ceil((retail * 1.6) / 1000) * 1000
 
   return (
-    <section id="revendedores" className="py-20 lg:py-28">
+    <section id="revendedores" className="py-14 sm:py-20 lg:py-28">
       <div className="container-x grid gap-12 lg:grid-cols-12 lg:items-center">
         <div className="lg:col-span-5">
           <SectionHeading

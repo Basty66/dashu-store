@@ -5,6 +5,7 @@
 @layer base {
   html {
     -webkit-text-size-adjust: 100%;
+    -webkit-tap-highlight-color: transparent;
     /* Compensa el header fijo en anclas (lo usan tanto el navegador como Lenis). */
     scroll-padding-top: 88px;
   }
@@ -19,6 +20,9 @@
   }
   ::selection {
     @apply bg-gold/30 text-ink;
+  }
+  a, button, [role="button"], [role="radio"], label, summary {
+    touch-action: manipulation;
   }
   :focus-visible {
     @apply outline-none ring-2 ring-gold ring-offset-2 ring-offset-bone;
@@ -81,10 +85,33 @@
     opacity: 0.05;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
+  /* Márgenes seguros del iPhone (barra de inicio) para elementos fijos abajo. */
+  .pb-safe {
+    padding-bottom: max(0.75rem, env(safe-area-inset-bottom));
+  }
   .scrollbar-none {
     scrollbar-width: none;
   }
   .scrollbar-none::-webkit-scrollbar {
     display: none;
+  }
+  /* Destellos de la tarjeta de agradecimiento: salen del centro hacia --tx/--ty. */
+  .spark {
+    animation: spark-burst 1.3s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@keyframes spark-burst {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0);
+  }
+  25% {
+    opacity: 1;
+    transform: translate(calc(-50% + var(--tx) * 0.5), calc(-50% + var(--ty) * 0.5)) scale(1.25);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--tx)), calc(-50% + var(--ty))) scale(0.3);
   }
 }

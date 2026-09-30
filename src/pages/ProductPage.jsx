@@ -7,7 +7,7 @@ import { useSeo } from '../hooks/useSeo'
 import { Skeleton } from '../components/atoms/Misc'
 import { Button } from '../components/atoms/Button'
 import { ErrorState } from '../components/molecules/Feedback'
-import { ProductShowcase } from '../components/organisms/ProductShowcase'
+import { ProductShowcase, ProductBuyBar } from '../components/organisms/ProductShowcase'
 import { VolumePricing } from '../components/organisms/VolumePricing'
 import { BeforeAfter } from '../components/organisms/BeforeAfter'
 import { HowToUse } from '../components/organisms/HowToUse'
@@ -75,14 +75,15 @@ export default function ProductPage() {
   return (
     <>
       <div className="container-x py-10 lg:py-14">
-        <nav aria-label="Migas de pan" className="mb-8 flex items-center gap-1.5 text-sm text-muted">
-          <Link to="/" className="hover:text-ink">Inicio</Link>
+        <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-1.5 sm:mb-8 text-sm text-muted">
+          <Link to="/" className="py-2 hover:text-ink">Inicio</Link>
           <ChevronRight size={14} aria-hidden="true" />
-          <Link to="/tienda" className="hover:text-ink">Tienda</Link>
+          <Link to="/tienda" className="py-2 hover:text-ink">Tienda</Link>
           <ChevronRight size={14} aria-hidden="true" />
           <span className="text-ink" aria-current="page">{product.title}</span>
         </nav>
         <ProductShowcase product={product} headingLevel="h1" />
+        <ProductBuyBar product={product} />
       </div>
       <VolumePricing product={product} />
       <BeforeAfter />

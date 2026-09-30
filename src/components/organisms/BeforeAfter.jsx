@@ -16,7 +16,7 @@ export function BeforeAfter({ before = '/img/antes.webp', after = '/img/despues.
   }
 
   return (
-    <section className="bg-bone py-20 lg:py-28">
+    <section className="bg-bone py-14 sm:py-20 lg:py-28">
       <div className="container-x grid items-center gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <SectionHeading eyebrow="Antes y después" title="Del erizo al peinado" description="Desliza para comparar. El efecto se concentra en el pelo lateral que se levanta." />
@@ -33,7 +33,7 @@ export function BeforeAfter({ before = '/img/antes.webp', after = '/img/despues.
         <figure className="lg:col-span-8">
           <div
             ref={box}
-            className="relative aspect-[1408/768] select-none overflow-hidden rounded-4xl bg-sand shadow-lift touch-pan-y"
+            className="relative aspect-[4/5] select-none sm:aspect-[1408/768] overflow-hidden rounded-4xl bg-sand shadow-lift touch-pan-y"
             onPointerDown={(e) => {
               dragging.current = true
               e.currentTarget.setPointerCapture(e.pointerId)

@@ -65,7 +65,7 @@ const faqs = [
 
 export function Faq() {
   return (
-    <section id="preguntas" className="py-20 lg:py-28">
+    <section id="preguntas" className="py-14 sm:py-20 lg:py-28">
       <div className="container-x grid gap-12 lg:grid-cols-12">
         <div className="lg:col-span-4">
           <SectionHeading eyebrow="Preguntas frecuentes" title="Todo lo que necesitas saber" />
