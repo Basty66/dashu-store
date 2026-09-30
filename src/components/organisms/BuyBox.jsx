@@ -4,7 +4,6 @@ import { ShoppingBag, Zap, TrendingDown, Store } from 'lucide-react'
 import { formatCLP, packSavings, packUnitPrice, sortPacks, nextPackUpsell, packLabelLong } from '@shared/pricing.js'
 import { HIGHLIGHT_PACK_UNITS, DISTRIBUTOR } from '@shared/store.js'
 import { useCart } from '../../store/cart'
-import { toast } from '../../store/toast'
 import { Button } from '../atoms/Button'
 import { PackOption } from '../molecules/PackOption'
 import { QuantityStepper } from '../molecules/QuantityStepper'
@@ -41,16 +40,15 @@ export function BuyBox({ product }) {
       quantity: qty,
     })
     setQuantity(1)
+    // Al agregar se abre el carrito; "Comprar ya" salta directo al checkout.
     if (goToCheckout) {
       useCart.getState().close()
       navigate('/checkout')
-    } else {
-      toast(`Agregaste ${qty} × ${packLabelLong(pack.units)}`, 'success')
     }
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div id="caja-compra" className="flex flex-col gap-6">
       <fieldset>
         <legend className="mb-3 flex w-full items-baseline justify-between text-sm font-medium">
           Elige tu formato

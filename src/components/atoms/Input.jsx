@@ -1,5 +1,6 @@
 const control =
-  'block w-full rounded-xl border bg-white px-4 text-[0.95rem] text-ink placeholder:text-muted/60 ' +
+  // 16 px en celular: con menos, iOS hace zoom al tocar el campo.
+  'block w-full rounded-xl border bg-white px-4 text-base text-ink placeholder:text-muted/60 sm:text-[0.95rem] ' +
   'transition-colors duration-200 ease-out focus:border-ink focus:outline-none focus:ring-4 focus:ring-gold/20 ' +
   'disabled:cursor-not-allowed disabled:bg-bone disabled:text-muted'
 

@@ -31,30 +31,30 @@ export function Footer() {
   const wa = whatsappLink()
   return (
     <footer className="relative overflow-hidden bg-ink text-paper">
-      <div className="container-x grid gap-12 py-16 md:grid-cols-12">
-        <div className="md:col-span-5">
+      <div className="container-x grid grid-cols-2 gap-x-6 gap-y-10 py-12 sm:py-16 md:grid-cols-12 md:gap-12">
+        <div className="col-span-2 md:col-span-5">
           <Logo tone="light" />
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-paper/60">
             Crema alisadora de origen coreano para el pelo rebelde. Vendemos por unidad y en packs por volumen, con despacho a todo Chile.
           </p>
         </div>
         {columns.map((col) => (
-          <nav key={col.title} className="md:col-span-2" aria-label={col.title}>
+          <nav key={col.title} className="col-span-1 md:col-span-2" aria-label={col.title}>
             <p className="eyebrow text-gold">{col.title}</p>
-            <ul className="mt-4 space-y-3">
+            <ul className="mt-3 space-y-0.5 sm:mt-4 sm:space-y-1">
               {col.links.map((l) => (
                 <li key={l.to}>
-                  <Link to={l.to} className="text-sm text-paper/70 transition-colors hover:text-paper">{l.label}</Link>
+                  <Link to={l.to} className="block py-1.5 text-sm text-paper/70 transition-colors hover:text-paper">{l.label}</Link>
                 </li>
               ))}
             </ul>
           </nav>
         ))}
-        <div className="md:col-span-3">
+        <div className="col-span-2 md:col-span-3">
           <p className="eyebrow text-gold">Contacto</p>
           <ul className="mt-4 space-y-3 text-sm text-paper/70">
-            <li className="flex items-center gap-2"><Mail size={15} aria-hidden="true" /><a href={`mailto:${STORE.email}`} className="hover:text-paper">{STORE.email}</a></li>
-            {wa && <li className="flex items-center gap-2"><MessageCircle size={15} aria-hidden="true" /><a href={wa} target="_blank" rel="noopener noreferrer" className="hover:text-paper">WhatsApp</a></li>}
+            <li className="flex items-center gap-2"><Mail size={15} aria-hidden="true" /><a href={`mailto:${STORE.email}`} className="py-1 hover:text-paper">{STORE.email}</a></li>
+            {wa && <li className="flex items-center gap-2"><MessageCircle size={15} aria-hidden="true" /><a href={wa} target="_blank" rel="noopener noreferrer" className="py-1 hover:text-paper">WhatsApp</a></li>}
             <li className="flex items-center gap-2"><Clock size={15} aria-hidden="true" />{STORE.hours}</li>
           </ul>
         </div>

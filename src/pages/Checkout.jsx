@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
-import { ShoppingBag, Lock, AlertCircle } from 'lucide-react'
+import { AnimatePresence, motion } from 'framer-motion'
+import { ShoppingBag, Lock, AlertCircle, ChevronDown } from 'lucide-react'
 import { REGION_NAMES, communesOf } from '@shared/chile.js'
 import { checkoutSchema, fieldErrors } from '@shared/checkoutSchema.js'
 import { formatRut } from '@shared/rut.js'
@@ -15,6 +16,7 @@ import { Field } from '../components/molecules/Field'
 import { EmptyState } from '../components/molecules/Feedback'
 import { TrustBadges } from '../components/molecules/TrustBadges'
 import { CheckoutSummary } from '../components/organisms/CheckoutSummary'
+import { MobileStickyBar } from '../components/organisms/MobileStickyBar'
 
 const PROFILE_KEY = 'dashu-checkout-profile'
 const emptyForm = { name: '', email: '', phone: '', region: '', commune: '', address: '', notes: '', documentType: 'boleta', rut: '', businessName: '', businessActivity: '' }
@@ -29,7 +31,7 @@ function loadProfile() {
 
 function Step({ n, title, children }) {
   return (
-    <section className="rounded-4xl border border-sand bg-paper p-6 sm:p-8" aria-labelledby={`step-${n}`}>
+    <section className="rounded-3xl border border-sand bg-paper p-5 sm:rounded-4xl sm:p-8" aria-labelledby={`step-${n}`}>
       <h2 id={`step-${n}`} className="flex items-center gap-3 font-display text-xl font-bold">
         <span className="grid h-8 w-8 place-items-center rounded-full bg-ink font-mono text-sm font-medium text-paper">{n}</span>
         {title}
@@ -48,6 +50,7 @@ export default function Checkout() {
   const [errors, setErrors] = useState({})
   const [submitting, setSubmitting] = useState(false)
   const [formError, setFormError] = useState('')
+  const [showSummary, setShowSummary] = useState(false)
   const { quote, loading } = useQuote({ region: form.region, couponCode: coupon })
   const communes = useMemo(() => communesOf(form.region), [form.region])
 
@@ -104,8 +107,8 @@ export default function Checkout() {
   const wa = whatsappLink('Hola, quiero completar una compra en DASHU STORE')
 
   return (
-    <div className="container-x py-10 lg:py-14">
-      <header className="mb-10 flex flex-wrap items-end justify-between gap-4">
+    <div className="container-x py-8 sm:py-10 lg:py-14">
+      <header className="mb-6 flex flex-wrap items-end justify-between gap-3 sm:mb-10 sm:gap-4">
         <div>
           <p className="eyebrow text-gold-deep">Checkout seguro</p>
           <h1 className="display-lg mt-2">Finaliza tu compra</h1>
@@ -113,8 +116,47 @@ export default function Checkout() {
         <p className="flex items-center gap-2 text-sm text-muted"><Lock size={15} aria-hidden="true" /> Pagas en Mercado Pago. No guardamos datos de tarjetas.</p>
       </header>
 
-      <div className="grid gap-8 lg:grid-cols-12">
-        <form onSubmit={submit} noValidate className="space-y-6 lg:col-span-7">
+      <div className="grid grid-cols-1 gap-4 sm:gap-8 lg:grid-cols-12">
+        {/* Celular: resumen desplegable arriba, con el total siempre visible (estilo Shopify). */}
+        <div className="lg:hidden">
+          <button
+            type="button"
+            onClick={() => setShowSummary((v) => !v)}
+            aria-expanded={showSummary}
+            className="flex w-full items-center justify-between gap-3 rounded-3xl border border-sand bg-paper px-5 py-4 text-left transition-colors active:bg-bone"
+          >
+            <span className="flex items-center gap-2 text-sm font-medium">
+              <ShoppingBag size={16} className="text-gold-deep" aria-hidden="true" />
+              {showSummary ? 'Ocultar resumen' : 'Ver resumen del pedido'}
+              <ChevronDown size={16} className={`transition-transform duration-300 ${showSummary ? 'rotate-180' : ''}`} aria-hidden="true" />
+            </span>
+            <span className="font-display text-lg font-bold tabular">{formatCLP(quote?.total ?? items.reduce((s, i) => s + i.unitPrice * i.quantity, 0))}</span>
+          </button>
+          <AnimatePresence initial={false}>
+            {showSummary && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="pt-3">
+                  <CheckoutSummary
+              items={items}
+              quote={quote}
+              loading={loading}
+              coupon={coupon}
+              onApplyCoupon={setCoupon}
+              onRemoveCoupon={() => setCoupon(null)}
+                  />
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <form id="checkout-form" onSubmit={submit} noValidate className="space-y-4 sm:space-y-6 lg:col-span-7">
           <Step n={1} title="Tus datos">
             <div className="grid gap-5 sm:grid-cols-2">
               <Field label="Nombre y apellido" error={err('name')} className="sm:col-span-2">
@@ -206,7 +248,7 @@ export default function Checkout() {
                 <AlertCircle size={16} className="mt-0.5 flex-none" aria-hidden="true" /> {formError}
               </p>
             )}
-            <Button type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={Boolean(blocked) || paymentsOff || loading}>
+            <Button id="pagar" type="submit" size="lg" className="mt-6 w-full" loading={submitting} disabled={Boolean(blocked) || paymentsOff || loading}>
               {submitting ? 'Conectando con Mercado Pago…' : `Pagar ${quote ? formatCLP(quote.total) : ''} con Mercado Pago`}
             </Button>
             <p className="mt-3 text-center text-xs text-muted">
@@ -217,20 +259,33 @@ export default function Checkout() {
 
         <div className="lg:col-span-5">
           <div className="space-y-6 lg:sticky lg:top-24">
-            <CheckoutSummary
+            <div className="hidden lg:block">
+              <CheckoutSummary
               items={items}
               quote={quote}
               loading={loading}
               coupon={coupon}
               onApplyCoupon={setCoupon}
               onRemoveCoupon={() => setCoupon(null)}
-            />
-            <div className="rounded-4xl border border-sand p-6">
+              />
+            </div>
+            <div className="rounded-3xl border border-sand p-5 sm:rounded-4xl sm:p-6">
               <TrustBadges stacked />
             </div>
           </div>
         </div>
       </div>
+
+      {/* Celular: total y botón de pago siempre a mano mientras se completa el formulario. */}
+      <MobileStickyBar targetId="pagar" mode="before">
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-xs text-muted">Total a pagar</p>
+          <p className="font-display text-xl font-bold tabular">{quote ? formatCLP(quote.total) : '—'}</p>
+        </div>
+        <Button type="submit" form="checkout-form" className="flex-none" loading={submitting} disabled={Boolean(blocked) || paymentsOff || loading}>
+          <Lock size={15} aria-hidden="true" /> Pagar
+        </Button>
+      </MobileStickyBar>
     </div>
   )
 }

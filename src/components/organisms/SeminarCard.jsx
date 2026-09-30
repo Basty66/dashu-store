@@ -10,7 +10,7 @@ export function SeminarCard({ seminar, featured = false }) {
   return (
     <Link
       to={`/capacitaciones/${seminar.slug}`}
-      className={`group flex flex-col gap-5 rounded-4xl border p-6 transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lift sm:flex-row sm:items-center sm:p-7 ${
+      className={`group flex w-full flex-col gap-5 rounded-3xl border p-5 transition-all sm:rounded-4xl duration-300 ease-out hover:-translate-y-1 hover:shadow-lift sm:flex-row sm:items-center sm:p-7 ${
         featured ? 'border-transparent bg-ink text-paper' : 'border-sand bg-paper'
       }`}
     >
@@ -29,9 +29,9 @@ export function SeminarCard({ seminar, featured = false }) {
         </p>
         <div className="mt-4 max-w-sm"><SeatsBar seminar={seminar} tone={featured ? 'light' : 'dark'} /></div>
       </div>
-      <div className="flex items-center justify-between gap-4 sm:flex-col sm:items-end">
-        <p className="font-display text-2xl font-bold tabular">{seminar.price === null ? <span className="text-base font-medium">Valor por confirmar</span> : formatCLP(seminar.price)}</p>
-        <span className={`inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium transition-colors ${featured ? 'bg-gold text-ink' : 'bg-ink text-paper group-hover:bg-navy-700'}`}>
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-x-4 gap-y-3 sm:mt-0 sm:flex-col sm:flex-nowrap sm:items-end">
+        <p className="font-display text-2xl font-bold tabular">{seminar.price === null ? <span className="text-sm font-medium sm:text-base">Valor por confirmar</span> : formatCLP(seminar.price)}</p>
+        <span className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-4 py-2 text-sm font-medium transition-colors ${featured ? 'bg-gold text-ink' : 'bg-ink text-paper group-hover:bg-navy-700'}`}>
           {seminar.price === null ? 'Pre-inscribirme' : full ? 'Ver detalle' : 'Inscribirme'} <ArrowUpRight size={15} aria-hidden="true" />
         </span>
       </div>

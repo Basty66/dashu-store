@@ -9,7 +9,7 @@ const steps = [
 
 export function HowToUse() {
   return (
-    <section id="como-usar" className="relative overflow-hidden bg-navy py-20 text-paper lg:py-28">
+    <section id="como-usar" className="relative overflow-hidden bg-navy py-14 text-paper sm:py-20 lg:py-28">
       <div className="container-x">
         <SectionHeading tone="light" eyebrow="Cómo se usa" title="Tres pasos. Sin herramientas." />
         <ol className="mt-14 grid gap-px overflow-hidden rounded-4xl bg-white/10 md:grid-cols-3">
@@ -20,11 +20,13 @@ export function HowToUse() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: '-60px' }}
               transition={{ duration: 0.7, delay: i * 0.1, ease: [0.16, 1, 0.3, 1] }}
-              className="relative bg-navy p-8 lg:p-10"
+              className="relative flex gap-5 bg-navy p-6 sm:block sm:p-8 lg:p-10"
             >
-              <span className="font-display text-7xl font-black text-gold/90" style={{ fontStretch: '125%' }}>{s.n}</span>
-              <h3 className="mt-8 text-2xl font-bold">{s.title}</h3>
-              <p className="mt-3 leading-relaxed text-paper/65">{s.text}</p>
+              <span className="flex-none font-display text-5xl font-black leading-none text-gold/90 sm:text-7xl" style={{ fontStretch: '125%' }}>{s.n}</span>
+              <div>
+                <h3 className="text-xl font-bold sm:mt-8 sm:text-2xl">{s.title}</h3>
+                <p className="mt-2 text-[0.95rem] leading-relaxed text-paper/65 sm:mt-3 sm:text-base">{s.text}</p>
+              </div>
             </motion.li>
           ))}
         </ol>

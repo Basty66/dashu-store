@@ -67,6 +67,8 @@ function vercelApiDev() {
 export default defineConfig({
   plugins: [react(), vercelApiDev()],
   resolve: { alias: { '@shared': path.resolve(process.cwd(), 'shared') } },
+  // Páginas de demostración (ej: /demo/tarjeta) solo en las vistas previas de Vercel, nunca en producción.
+  define: { 'import.meta.env.VITE_DEMOS': JSON.stringify(process.env.VERCEL_ENV === 'preview' ? '1' : '') },
   server: { port: 5173 },
   build: {
     rollupOptions: {

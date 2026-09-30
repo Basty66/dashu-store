@@ -13,6 +13,7 @@ import { useSeo } from '../hooks/useSeo'
 import { Button } from '../components/atoms/Button'
 import { Input, Select, Textarea } from '../components/atoms/Input'
 import { Field } from '../components/molecules/Field'
+import { MobileStickyBar } from '../components/organisms/MobileStickyBar'
 
 const empty = { name: '', email: '', phone: '', business: '', rut: '', region: '', city: '', boxes: DISTRIBUTOR.minBoxes, message: '' }
 const requirement = `Para ser distribuidor debes pedir al menos ${DISTRIBUTOR.minBoxes} embalajes 📦 (cada embalaje trae ${DISTRIBUTOR.unitsPerBox} cremas DASHU) por un total de ${formatCLP(DISTRIBUTOR_MIN_TOTAL)}. Cada crema te queda a ${formatCLP(DISTRIBUTOR.unitCost)}.`
@@ -125,7 +126,7 @@ export default function Distributors() {
             <p className="mt-3 text-muted">Completa tus datos y te contactamos para coordinar el pedido, el pago y el despacho.</p>
             <Requirement className="mt-6" />
           </div>
-          <form onSubmit={submit} noValidate className="grid gap-5 rounded-4xl border border-sand bg-paper p-6 sm:grid-cols-2 sm:p-8 lg:col-span-8">
+          <form id="postular" onSubmit={submit} noValidate className="grid gap-5 rounded-3xl border border-sand bg-paper p-5 sm:grid-cols-2 sm:rounded-4xl sm:p-8 lg:col-span-8">
             <Field label="Nombre y apellido" error={errors.name}><Input name="lead-name" value={form.name} onChange={set('name')} autoComplete="name" /></Field>
             <Field label="Barbería o negocio" error={errors.business}><Input name="lead-business" value={form.business} onChange={set('business')} autoComplete="organization" /></Field>
             <Field label="Email" error={errors.email}><Input name="lead-email" type="email" value={form.email} onChange={set('email')} autoComplete="email" /></Field>
@@ -150,10 +151,19 @@ export default function Distributors() {
             )}
             <Field label="Mensaje" optional className="sm:col-span-2"><Textarea name="lead-message" value={form.message} onChange={set('message')} maxLength={1000} placeholder="Cuéntanos de tu negocio y dónde venderías" /></Field>
             {state.error && <p className="text-sm text-danger sm:col-span-2" role="alert">{state.error}</p>}
-            <div className="sm:col-span-2"><Button type="submit" size="lg" loading={state.sending}>Enviar solicitud</Button></div>
+            <div className="sm:col-span-2"><Button type="submit" size="lg" loading={state.sending} className="w-full sm:w-auto">Enviar solicitud</Button></div>
           </form>
         </div>
       </section>
+
+      {/* Celular: acceso directo al formulario de postulación. */}
+      <MobileStickyBar targetId="postular" mode="before">
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-sm font-medium">Programa de distribuidores</p>
+          <p className="text-xs text-muted tabular">{formatCLP(DISTRIBUTOR.unitCost)} por crema</p>
+        </div>
+        <Button className="flex-none" onClick={() => scrollToTarget(document.getElementById('postular'))}>Postular</Button>
+      </MobileStickyBar>
     </>
   )
 }

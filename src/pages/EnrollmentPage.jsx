@@ -12,6 +12,7 @@ import { Button } from '../components/atoms/Button'
 import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState } from '../components/molecules/Feedback'
 import { DateBlock } from '../components/molecules/SeminarBits'
+import { ThankYouCard } from '../components/organisms/ThankYouCard'
 
 const heads = {
   PAGADO: [CheckCircle2, 'text-success', (n) => `¡Listo, ${n}! Tu cupo está confirmado`, 'Te enviamos la confirmación por email. Agrega la fecha a tu calendario para no olvidarla.'],
@@ -92,6 +93,18 @@ export default function EnrollmentPage() {
         <span className="font-mono text-sm font-medium">{e.code}</span>
         <Badge tone={ENROLLMENT_STATUS[e.status]?.tone}>{ENROLLMENT_STATUS[e.status]?.label}</Badge>
       </div>
+
+      {['PAGADO', 'PREINSCRITO'].includes(e.status) && (
+        <div className="mb-8">
+          <ThankYouCard
+            name={first}
+            code={e.code}
+            label={s.city}
+            message={e.status === 'PAGADO' ? 'Gracias por inscribirte,' : 'Gracias por tu interés,'}
+            note={e.status === 'PAGADO' ? 'Nos vemos en la capacitación. Agrega la fecha a tu calendario.' : 'Te avisaremos apenas se confirme el valor.'}
+          />
+        </div>
+      )}
 
       <div className="rounded-4xl border border-sand bg-paper p-6 sm:p-8">
         <div className="flex items-start gap-4">

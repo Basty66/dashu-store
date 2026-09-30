@@ -61,6 +61,7 @@ function ReviewForm() {
 
 export function Reviews() {
   const [reviews, setReviews] = useState(null)
+  const [writing, setWriting] = useState(false)
   useEffect(() => {
     api('/reviews').then(setReviews).catch(() => setReviews([]))
   }, [])
@@ -68,8 +69,8 @@ export function Reviews() {
   const avg = reviews?.length ? reviews.reduce((s, r) => s + r.rating, 0) / reviews.length : 0
 
   return (
-    <section id="resenas" className="bg-paper py-20 lg:py-28">
-      <div className="container-x grid gap-12 lg:grid-cols-12">
+    <section id="resenas" className="bg-paper py-14 sm:py-20 lg:py-28">
+      <div className="container-x grid gap-8 sm:gap-12 lg:grid-cols-12">
         <div className="lg:col-span-7">
           <div className="flex flex-wrap items-end justify-between gap-6">
             <SectionHeading eyebrow="Reseñas" title="Lo que dicen nuestros clientes" />
@@ -81,15 +82,16 @@ export function Reviews() {
               </div>
             )}
           </div>
-          <div className="mt-10">
+          <div className="mt-8 sm:mt-10">
             {reviews === null ? (
               <div className="grid gap-4 sm:grid-cols-2">{[0, 1].map((i) => <Skeleton key={i} className="h-40" />)}</div>
             ) : reviews.length === 0 ? (
-              <EmptyState icon={MessageSquareQuote} title="Aún no hay reseñas publicadas" message="Sé el primero en contar tu experiencia." className="rounded-4xl border border-dashed border-sand-300" />
+              <EmptyState icon={MessageSquareQuote} title="Aún no hay reseñas publicadas" message="Sé el primero en contar tu experiencia." className="rounded-3xl border border-dashed border-sand-300 py-10 sm:rounded-4xl sm:py-14" />
             ) : (
-              <ul className="columns-1 gap-4 sm:columns-2 [&>li]:mb-4">
+              // En celular las reseñas se deslizan de lado; en escritorio van en dos columnas.
+              <ul className="scrollbar-none -mx-4 flex snap-x snap-mandatory scroll-px-4 gap-3 overflow-x-auto px-4 pb-2 sm:mx-0 sm:block sm:columns-2 sm:gap-4 sm:overflow-visible sm:px-0 sm:pb-0 sm:[&>li]:mb-4">
                 {reviews.map((r) => (
-                  <li key={r.id} className="break-inside-avoid rounded-3xl border border-sand bg-white p-6">
+                  <li key={r.id} className="w-[85%] flex-none snap-start break-inside-avoid rounded-3xl border border-sand bg-white p-6 sm:w-auto">
                     <Stars value={r.rating} />
                     <p className="mt-4 leading-relaxed">“{r.comment}”</p>
                     <p className="mt-5 flex items-center gap-3 text-sm">
@@ -106,7 +108,13 @@ export function Reviews() {
           </div>
         </div>
         <div className="lg:col-span-5">
-          <ReviewForm />
+          {/* En celular el formulario se abre con un botón para no alargar la página. */}
+          <Button variant="secondary" className={`w-full lg:hidden ${writing ? 'hidden' : ''}`} onClick={() => setWriting(true)}>
+            <Star size={16} aria-hidden="true" /> Escribir una reseña
+          </Button>
+          <div className={`${writing ? 'block' : 'hidden'} lg:block`}>
+            <ReviewForm />
+          </div>
         </div>
       </div>
     </section>
