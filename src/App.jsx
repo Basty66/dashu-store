@@ -20,6 +20,7 @@ const SeminarPage = lazy(() => import('./pages/SeminarPage'))
 const EnrollmentPage = lazy(() => import('./pages/EnrollmentPage'))
 const Distributors = lazy(() => import('./pages/Distributors'))
 const MockPayment = lazy(() => import('./pages/MockPayment'))
+const CardDemo = lazy(() => import('./pages/CardDemo'))
 const AdminApp = lazy(() => import('./pages/admin/AdminApp'))
 
 class ErrorBoundary extends Component {
@@ -70,6 +71,7 @@ export default function App() {
             <Route path="privacidad" element={<Privacy />} />
             <Route path="devoluciones" element={<Returns />} />
             {import.meta.env.DEV && <Route path="pago-simulado" element={<MockPayment />} />}
+            {(import.meta.env.DEV || import.meta.env.VITE_DEMOS) && <Route path="demo/tarjeta" element={<CardDemo />} />}
             <Route path="tracking" element={<Navigate to="/seguimiento" replace />} />
             <Route path="order/:orderNumber" element={<LegacyOrderRedirect />} />
             <Route path="*" element={<NotFound />} />
