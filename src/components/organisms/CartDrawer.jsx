@@ -4,6 +4,7 @@ import { ShoppingBag, X, ArrowRight, TrendingUp } from 'lucide-react'
 import { formatCLP, nextPackUpsell, packLabel } from '@shared/pricing.js'
 import { useCart, cartSubtotal, cartUnits } from '../../store/cart'
 import { useProducts } from '../../hooks/useProducts'
+import { useScrollLock } from '../../lib/smoothScroll'
 import { Button } from '../atoms/Button'
 import { CartLine } from '../molecules/CartLine'
 import { EmptyState } from '../molecules/Feedback'
@@ -16,16 +17,15 @@ export function CartDrawer() {
   const { data: products } = useProducts()
   const closeRef = useRef(null)
   const subtotal = cartSubtotal(items)
+  useScrollLock(isOpen)
 
   useEffect(() => {
     if (!isOpen) return
     const onKey = (e) => e.key === 'Escape' && close()
     document.addEventListener('keydown', onKey)
-    document.body.style.overflow = 'hidden'
     closeRef.current?.focus()
     return () => {
       document.removeEventListener('keydown', onKey)
-      document.body.style.overflow = ''
     }
   }, [isOpen, close])
 
@@ -70,7 +70,7 @@ export function CartDrawer() {
               />
             ) : (
               <>
-                <div className="flex-1 overflow-y-auto px-6">
+                <div className="flex-1 overflow-y-auto overscroll-contain px-6" data-lenis-prevent>
                   <ul className="divide-y divide-sand">
                     {items.map((line) => {
                       const product = productOf(line.productId)

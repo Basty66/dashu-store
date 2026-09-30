@@ -1,9 +1,17 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
+import { AnimatePresence, motion } from 'framer-motion'
 import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Mail, LogOut, ExternalLink, Menu, X, GraduationCap, Store } from 'lucide-react'
 import { api } from '../../lib/api'
 import { Logo } from '../atoms/Logo'
 import { Toaster } from '../organisms/Chrome'
+
+// Mantiene el contenido de la ruta que sale mientras se desvanece.
+function FrozenOutlet() {
+  const outlet = useOutlet()
+  const [frozen] = useState(outlet)
+  return frozen
+}
 
 const nav = [
   { to: '/admin', label: 'Resumen', icon: LayoutDashboard, end: true },
@@ -25,7 +33,8 @@ export function AdminLayout() {
     navigate('/admin/login', { replace: true })
   }
 
-  const links = (
+  const location = useLocation()
+  const links = (group) => (
     <nav className="flex flex-col gap-1" aria-label="Administración">
       {nav.map(({ to, label, icon: Icon, end }) => (
         <NavLink
@@ -34,10 +43,15 @@ export function AdminLayout() {
           end={end}
           onClick={() => setOpen(false)}
           className={({ isActive }) =>
-            `flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-200 ${isActive ? 'bg-white/10 text-paper' : 'text-paper/60 hover:bg-white/5 hover:text-paper'}`
+            `relative isolate flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition-colors duration-200 ${isActive ? 'text-paper' : 'text-paper/60 hover:bg-white/5 hover:text-paper'}`
           }
         >
-          <Icon size={17} aria-hidden="true" /> {label}
+          {({ isActive }) => (
+            <>
+              {isActive && <motion.span layoutId={`admin-pill-${group}`} className="absolute inset-0 -z-10 rounded-xl bg-white/10" transition={{ type: 'spring', stiffness: 420, damping: 36 }} />}
+              <Icon size={17} aria-hidden="true" /> {label}
+            </>
+          )}
         </NavLink>
       ))}
     </nav>
@@ -48,7 +62,7 @@ export function AdminLayout() {
       <aside className="hidden flex-col justify-between bg-ink p-5 text-paper lg:flex lg:sticky lg:top-0 lg:h-screen">
         <div>
           <div className="mb-8 px-3 pt-2"><Logo tone="light" /><p className="mt-2 font-mono text-2xs uppercase tracking-[0.18em] text-paper/40">Panel</p></div>
-          {links}
+          {links('desktop')}
         </div>
         <div className="flex flex-col gap-1">
           <a href="/" target="_blank" rel="noopener noreferrer" className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-paper/60 hover:bg-white/5 hover:text-paper"><ExternalLink size={17} /> Ver tienda</a>
@@ -62,15 +76,28 @@ export function AdminLayout() {
           {open ? <X size={20} /> : <Menu size={20} />}
         </button>
       </header>
-      {open && (
-        <div className="bg-ink px-4 pb-4 text-paper lg:hidden">
-          {links}
-          <button type="button" onClick={logout} className="mt-2 flex items-center gap-3 px-3 py-2.5 text-sm text-paper/60"><LogOut size={17} /> Cerrar sesión</button>
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div className="overflow-hidden bg-ink px-4 text-paper lg:hidden" initial={{ height: 0 }} animate={{ height: 'auto' }} exit={{ height: 0 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+            <div className="pb-4">
+              {links('mobile')}
+              <button type="button" onClick={logout} className="mt-2 flex items-center gap-3 px-3 py-2.5 text-sm text-paper/60"><LogOut size={17} /> Cerrar sesión</button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <main className="min-w-0 px-4 py-8 sm:px-8 lg:px-10 lg:py-10">
-        <Outlet />
+        <AnimatePresence mode="wait" initial={false} onExitComplete={() => window.scrollTo(0, 0)}>
+          <motion.div
+            key={location.pathname}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0, transition: { duration: 0.35, ease: [0.16, 1, 0.3, 1] } }}
+            exit={{ opacity: 0, transition: { duration: 0.15 } }}
+          >
+            <FrozenOutlet />
+          </motion.div>
+        </AnimatePresence>
       </main>
       <Toaster />
     </div>
