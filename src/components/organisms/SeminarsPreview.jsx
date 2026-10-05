@@ -1,7 +1,7 @@
 import { ArrowRight, Store, Package } from 'lucide-react'
-import { DISTRIBUTOR, DISTRIBUTOR_MIN_UNITS, DISTRIBUTOR_MIN_TOTAL } from '@shared/store.js'
 import { formatCLP } from '@shared/pricing.js'
 import { useSeminars } from '../../hooks/useSeminars'
+import { useDistributor } from '../../store/storeConfig'
 import { Button } from '../atoms/Button'
 import { Skeleton } from '../atoms/Misc'
 import { SectionHeading } from '../molecules/SectionHeading'
@@ -36,6 +36,7 @@ export function UpcomingSeminars({ limit = 3 }) {
 
 // Franja para captar distribuidores.
 export function DistributorBand() {
+  const distributor = useDistributor()
   return (
     <section className="bg-navy py-16 text-paper lg:py-20">
       <div className="container-x grid items-center gap-10 lg:grid-cols-12">
@@ -48,8 +49,8 @@ export function DistributorBand() {
         </div>
         <div className="rounded-4xl border border-white/10 bg-white/[0.04] p-6 lg:col-span-5">
           <ul className="space-y-3 text-sm">
-            <li className="flex items-center gap-3"><Package size={18} className="text-gold" aria-hidden="true" /> Mínimo {DISTRIBUTOR.minBoxes} embalajes de {DISTRIBUTOR.unitsPerBox} cremas ({DISTRIBUTOR_MIN_UNITS} u.)</li>
-            <li className="flex items-center gap-3"><Store size={18} className="text-gold" aria-hidden="true" /> Cada crema a <strong className="tabular">{formatCLP(DISTRIBUTOR.unitCost)}</strong> · total {formatCLP(DISTRIBUTOR_MIN_TOTAL)}</li>
+            <li className="flex items-center gap-3"><Package size={18} className="text-gold" aria-hidden="true" /> Mínimo {distributor.minBoxes} embalajes de {distributor.unitsPerBox} cremas ({distributor.minUnits} u.)</li>
+            <li className="flex items-center gap-3"><Store size={18} className="text-gold" aria-hidden="true" /> Cada crema a <strong className="tabular">{formatCLP(distributor.unitCost)}</strong> · total {formatCLP(distributor.minTotal)}</li>
           </ul>
           <Button variant="gold" to="/distribuidores" className="mt-6 w-full">Postular como distribuidor <ArrowRight size={16} aria-hidden="true" /></Button>
         </div>

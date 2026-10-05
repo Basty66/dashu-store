@@ -21,6 +21,12 @@ export default [
       'react/jsx-uses-vars': 'error',
       'no-unused-vars': ['error', { varsIgnorePattern: '^_', argsIgnorePattern: '^_', ignoreRestSiblings: true }],
       'react-refresh/only-export-components': ['warn', { allowConstantExport: true }],
+      // Inyección SQL: solo SQL con plantillas de Prisma ($queryRaw`...`), que manda los valores como parámetros.
+      'no-restricted-properties': [
+        'error',
+        { property: '$queryRawUnsafe', message: 'Usa $queryRaw`...` (con parámetros) para evitar inyección SQL.' },
+        { property: '$executeRawUnsafe', message: 'Usa $executeRaw`...` (con parámetros) para evitar inyección SQL.' },
+      ],
     },
   },
 ]

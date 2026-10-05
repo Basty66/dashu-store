@@ -1,8 +1,9 @@
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { formatCLP, packSavings, packUnitPrice, sortPacks, referenceUnitPrice, packLabel } from '@shared/pricing.js'
-import { HIGHLIGHT_PACK_UNITS } from '@shared/store.js'
 import { useCart } from '../../store/cart'
+import { useConfig } from '../../store/storeConfig'
+import { packDiscount } from '../../lib/sale'
 import { Badge } from '../atoms/Badge'
 import { SectionHeading } from '../molecules/SectionHeading'
 
@@ -10,6 +11,7 @@ import { SectionHeading } from '../molecules/SectionHeading'
 // En celular cada formato es una fila compacta (sin barra) con botón redondo.
 export function VolumePricing({ product }) {
   const add = useCart((s) => s.add)
+  const highlightUnits = useConfig((c) => c.highlightPackUnits)
   const packs = sortPacks(product.packs)
   const ref = referenceUnitPrice(packs)
 
@@ -41,7 +43,8 @@ export function VolumePricing({ product }) {
             {packs.map((pack, i) => {
               const unit = packUnitPrice(pack)
               const savings = packSavings(pack, packs)
-              const highlight = pack.units === HIGHLIGHT_PACK_UNITS
+              const highlight = pack.units === highlightUnits
+              const discount = packDiscount(pack)
               const disabled = pack.units > product.stock
               return (
                 <motion.li
@@ -55,6 +58,7 @@ export function VolumePricing({ product }) {
                   <div className="min-w-0 md:col-span-2">
                     <p className="flex flex-wrap items-center gap-2 font-display text-lg font-bold md:text-xl" style={{ fontStretch: '115%' }}>
                       {packLabel(pack.units)}
+                      {discount > 0 && <Badge tone="sale">−{discount}%</Badge>}
                       {highlight && <Badge tone="goldSolid" className="md:hidden">Más elegido</Badge>}
                     </p>
                     <p className="text-xs text-muted tabular">
@@ -79,6 +83,7 @@ export function VolumePricing({ product }) {
                   </div>
                   <div className="text-right md:col-span-2">
                     <p className="font-mono text-sm tabular">{formatCLP(pack.price)}</p>
+                    {discount > 0 && <s className="block text-xs text-muted tabular"><span className="sr-only">Antes </span>{formatCLP(pack.regularPrice)}</s>}
                     {savings.percent > 0 && <p className="text-xs font-medium text-success md:hidden">Ahorras {savings.percent}%</p>}
                   </div>
                   <p className="hidden text-right text-sm md:col-span-2 md:block">

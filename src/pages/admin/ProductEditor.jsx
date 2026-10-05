@@ -1,10 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, ImagePlus, Trash2, Plus, ChevronLeft, ChevronRight, Save, EyeOff } from 'lucide-react'
+import { ArrowLeft, Save, EyeOff } from 'lucide-react'
 import { PACK_SIZES } from '@shared/store.js'
-import { formatCLP } from '@shared/pricing.js'
 import { useAdminData } from '../../hooks/useAdminData'
-import { compressImage } from '../../lib/image'
 import { toast } from '../../store/toast'
 import { Button } from '../../components/atoms/Button'
 import { Input, Textarea } from '../../components/atoms/Input'
@@ -12,95 +10,27 @@ import { Skeleton } from '../../components/atoms/Misc'
 import { Field } from '../../components/molecules/Field'
 import { ErrorState } from '../../components/molecules/Feedback'
 import { AdminPage, Card } from '../../components/templates/AdminLayout'
+import { PacksEditor } from '../../components/organisms/admin/PacksEditor'
+import { ImagesEditor } from '../../components/organisms/admin/ImagesEditor'
+import { errorsFor } from '../../lib/formErrors'
 
 const blank = {
   title: '', slug: '', brand: 'DASHU', subtitle: '', description: '', howToUse: '', ingredients: '', contentSize: '',
   category: 'alisado', images: [], isActive: true, sortOrder: 0, stock: 0,
-  packs: PACK_SIZES.map((units) => ({ units, price: 0, isActive: true })),
+  packs: PACK_SIZES.map((units) => ({ units, price: 0, isActive: true, salePrice: null, saleStartsAt: null, saleEndsAt: null })),
 }
 
-function PacksEditor({ packs, onChange, errors }) {
-  const update = (i, patch) => onChange(packs.map((p, j) => (j === i ? { ...p, ...patch } : p)))
-  const missing = PACK_SIZES.filter((u) => !packs.some((p) => p.units === u))
-  const unitRef = packs.find((p) => p.units === 1)?.price || 0
-  return (
-    <div className="space-y-3">
-      <div className="hidden grid-cols-12 gap-3 px-1 font-mono text-2xs uppercase tracking-[0.12em] text-muted sm:grid">
-        <span className="col-span-2">Unidades</span><span className="col-span-4">Precio del pack (CLP)</span><span className="col-span-3">Por unidad</span><span className="col-span-3 text-right">Visible</span>
-      </div>
-      {packs.map((p, i) => {
-        const per = p.units > 0 && p.price > 0 ? Math.round(p.price / p.units) : 0
-        const saving = unitRef && per && p.units > 1 ? Math.round((1 - per / unitRef) * 100) : 0
-        return (
-          <div key={i} className="grid grid-cols-12 items-center gap-3 rounded-2xl border border-sand bg-white p-3">
-            <Input type="number" min={1} value={p.units} onChange={(e) => update(i, { units: Number(e.target.value) })} className="col-span-3 h-11 font-mono sm:col-span-2" aria-label="Unidades del pack" />
-            <Input type="number" min={0} step={500} value={p.price || ''} onChange={(e) => update(i, { price: Number(e.target.value) })} className="col-span-9 h-11 font-mono sm:col-span-4" aria-label={`Precio del pack de ${p.units}`} placeholder="Ej: 115000" />
-            <p className="col-span-7 text-sm tabular sm:col-span-3">{per ? formatCLP(per) : '—'}{saving > 0 && <span className="ml-2 text-xs text-success">−{saving}%</span>}</p>
-            <div className="col-span-5 flex items-center justify-end gap-2 sm:col-span-3">
-              <label className="flex items-center gap-2 text-sm"><input type="checkbox" checked={p.isActive} onChange={(e) => update(i, { isActive: e.target.checked })} className="h-4 w-4 accent-[#171210]" /> Sí</label>
-              <button type="button" onClick={() => onChange(packs.filter((_, j) => j !== i))} className="rounded-lg p-2 text-muted hover:bg-danger/10 hover:text-danger" aria-label={`Quitar pack de ${p.units}`}><Trash2 size={15} /></button>
-            </div>
-          </div>
-        )
-      })}
-      {errors && <p className="text-sm text-danger">{errors}</p>}
-      <div className="flex flex-wrap gap-2">
-        {missing.map((u) => (
-          <Button key={u} size="sm" variant="secondary" onClick={() => onChange([...packs, { units: u, price: 0, isActive: true }].sort((a, b) => a.units - b.units))}><Plus size={14} /> {u === 1 ? 'Unidad' : `Pack ${u}`}</Button>
-        ))}
-      </div>
-    </div>
-  )
-}
-
-function ImagesEditor({ images, onChange, mutate }) {
-  const input = useRef(null)
-  const [uploading, setUploading] = useState(false)
-  const move = (i, d) => {
-    const next = [...images]
-    ;[next[i], next[i + d]] = [next[i + d], next[i]]
-    onChange(next)
+// Formato listo para la API: sin oferta no viajan fechas sueltas.
+function packPayload(p) {
+  const hasSale = p.salePrice !== null && p.salePrice !== undefined
+  return {
+    units: Number(p.units),
+    price: Number(p.price),
+    isActive: p.isActive,
+    salePrice: hasSale ? Number(p.salePrice) : null,
+    saleStartsAt: hasSale ? p.saleStartsAt : null,
+    saleEndsAt: hasSale ? p.saleEndsAt : null,
   }
-  async function upload(files) {
-    setUploading(true)
-    const urls = []
-    try {
-      for (const file of files) {
-        try {
-          const dataUrl = await compressImage(file)
-          const { url } = await mutate('/admin/images', { method: 'POST', body: { dataUrl } })
-          urls.push(url)
-        } catch (e) {
-          toast(`${file.name}: ${e.message}`, 'error')
-        }
-      }
-      onChange([...images, ...urls])
-    } finally {
-      setUploading(false)
-    }
-  }
-  return (
-    <div>
-      <div className="grid grid-cols-3 gap-3 sm:grid-cols-5">
-        {images.map((src, i) => (
-          <div key={src} className="group relative aspect-square overflow-hidden rounded-2xl bg-navy">
-            <img src={src} alt={`Imagen ${i + 1}`} className="h-full w-full object-cover" />
-            {i === 0 && <span className="absolute left-2 top-2 rounded-full bg-paper px-2 py-0.5 text-2xs font-medium">Principal</span>}
-            <div className="absolute inset-x-2 bottom-2 flex justify-between opacity-0 transition-opacity group-hover:opacity-100 group-focus-within:opacity-100">
-              <button type="button" disabled={i === 0} onClick={() => move(i, -1)} className="rounded-full bg-paper p-1.5 disabled:opacity-30" aria-label="Mover a la izquierda"><ChevronLeft size={14} /></button>
-              <button type="button" onClick={() => onChange(images.filter((_, j) => j !== i))} className="rounded-full bg-paper p-1.5 text-danger" aria-label="Quitar imagen"><Trash2 size={14} /></button>
-              <button type="button" disabled={i === images.length - 1} onClick={() => move(i, 1)} className="rounded-full bg-paper p-1.5 disabled:opacity-30" aria-label="Mover a la derecha"><ChevronRight size={14} /></button>
-            </div>
-          </div>
-        ))}
-        <button type="button" onClick={() => input.current?.click()} disabled={uploading} className="grid aspect-square place-items-center rounded-2xl border-2 border-dashed border-sand-300 text-muted transition-colors hover:border-ink hover:text-ink">
-          <span className="flex flex-col items-center gap-1 text-xs"><ImagePlus size={20} />{uploading ? 'Subiendo…' : 'Agregar'}</span>
-        </button>
-      </div>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" multiple className="hidden" onChange={(e) => { void upload([...e.target.files]); e.target.value = '' }} />
-      <p className="mt-2 text-xs text-muted">Las imágenes se comprimen automáticamente. La primera es la principal. Usa fotos cuadradas para mejor resultado.</p>
-    </div>
-  )
 }
 
 export default function ProductEditor() {
@@ -126,7 +56,7 @@ export default function ProductEditor() {
     setSaving(true)
     setErrors({})
     const { id: _id, stock, ...fields } = form
-    const body = { ...fields, sortOrder: Number(form.sortOrder) || 0, packs: form.packs.map((p) => ({ units: Number(p.units), price: Number(p.price), isActive: p.isActive })) }
+    const body = { ...fields, sortOrder: Number(form.sortOrder) || 0, packs: form.packs.map(packPayload) }
     if (isNew) body.stock = Number(stock) || 0
     else body.stockDelta = Number(stockDelta) || 0
     try {
@@ -153,7 +83,8 @@ export default function ProductEditor() {
   if (!isNew && error) return <AdminPage title="Producto"><ErrorState message={error.message} onRetry={reload} /></AdminPage>
   if (!form || (loading && !isNew && !list)) return <AdminPage title="Producto"><Skeleton className="h-96 rounded-3xl" /></AdminPage>
 
-  const packsError = Object.entries(errors).find(([k]) => k.startsWith('packs'))?.[1]
+  const packErrors = errorsFor(errors, 'packs')
+  const packsError = packErrors._ || Object.entries(errors).find(([k]) => /^packs.d+.(units|price)$/.test(k))?.[1]
 
   return (
     <AdminPage title={isNew ? 'Nuevo producto' : form.title} actions={<Button variant="ghost" size="sm" to="/admin/productos"><ArrowLeft size={15} /> Productos</Button>}>
@@ -168,7 +99,7 @@ export default function ProductEditor() {
           </Card>
           <Card>
             <h2 className="mb-4 font-display text-lg font-bold">Formatos de venta</h2>
-            <PacksEditor packs={form.packs} onChange={(packs) => setForm((f) => ({ ...f, packs }))} errors={packsError} />
+            <PacksEditor packs={form.packs} onChange={(packs) => setForm((f) => ({ ...f, packs }))} error={packsError} rowErrors={packErrors} />
           </Card>
           <Card>
             <h2 className="mb-4 font-display text-lg font-bold">Imágenes</h2>

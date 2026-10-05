@@ -7,6 +7,7 @@ const tones = {
   warning: 'bg-warning/10 text-warning',
   info: 'bg-navy/10 text-navy',
   dark: 'bg-ink text-paper',
+  sale: 'bg-danger text-white',
   light: 'bg-white/10 text-white ring-1 ring-inset ring-white/15',
 }
 

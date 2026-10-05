@@ -19,23 +19,14 @@ export const FOUNDER = {
   city: 'Melipilla',
   yearsInBarbering: 11,
   // Ruta de una foto en /public (ej: '/img/tomas.webp'). Sin foto se muestra un monograma.
-  photo: null,
+  photo: '/img/tomas.webp',
 }
 
-// Formatos de venta disponibles para cada producto (unidades por pack).
+// Formatos sugeridos al crear un producto nuevo (unidades por pack).
 export const PACK_SIZES = [1, 3, 10]
 
-// Pack destacado como "Más elegido" en la tienda.
-export const HIGHLIGHT_PACK_UNITS = 3
-
-// Programa de distribuidores: compra mínima por embalajes cerrados.
-export const DISTRIBUTOR = {
-  unitsPerBox: 30,
-  minBoxes: 3,
-  unitCost: 19000,
-}
-export const DISTRIBUTOR_MIN_UNITS = DISTRIBUTOR.unitsPerBox * DISTRIBUTOR.minBoxes
-export const DISTRIBUTOR_MIN_TOTAL = DISTRIBUTOR_MIN_UNITS * DISTRIBUTOR.unitCost
+// El pack destacado, el programa de distribuidores, los envíos y la barra de anuncios se
+// editan en Admin → Ajustes (valores por defecto en shared/storeConfig.js).
 
 // Tiempo que se reserva el stock (o el cupo de un seminario) mientras el cliente paga en Mercado Pago.
 export const PAYMENT_WINDOW_MINUTES = 60

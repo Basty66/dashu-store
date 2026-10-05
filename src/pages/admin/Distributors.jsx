@@ -1,10 +1,10 @@
 import { useState } from 'react'
 import { Store, MessageCircle, Mail, Trash2 } from 'lucide-react'
 import { LEAD_STATUS } from '@shared/seminars.js'
-import { DISTRIBUTOR, DISTRIBUTOR_MIN_TOTAL } from '@shared/store.js'
 import { formatCLP } from '@shared/pricing.js'
 import { useAdminData } from '../../hooks/useAdminData'
 import { toast } from '../../store/toast'
+import { useDistributor } from '../../store/storeConfig'
 import { Badge } from '../../components/atoms/Badge'
 import { Button } from '../../components/atoms/Button'
 import { Select, Textarea } from '../../components/atoms/Input'
@@ -18,10 +18,11 @@ const waNumber = (phone) => {
 }
 
 function Lead({ lead, mutate, onChange }) {
+  const distributor = useDistributor()
   const [notes, setNotes] = useState(lead.notes || '')
-  const units = lead.boxes * DISTRIBUTOR.unitsPerBox
+  const units = lead.boxes * distributor.unitsPerBox
   const wa = `https://wa.me/${waNumber(lead.phone)}?text=${encodeURIComponent(
-    `Hola ${lead.name.split(' ')[0]}, gracias por postular como distribuidor DASHU. Para ser distribuidor el pedido mínimo es de ${DISTRIBUTOR.minBoxes} embalajes de ${DISTRIBUTOR.unitsPerBox} cremas por ${formatCLP(DISTRIBUTOR_MIN_TOTAL)} (${formatCLP(DISTRIBUTOR.unitCost)} c/u). ¿Coordinamos tu pedido?`,
+    `Hola ${lead.name.split(' ')[0]}, gracias por postular como distribuidor DASHU. Para ser distribuidor el pedido mínimo es de ${distributor.minBoxes} embalajes de ${distributor.unitsPerBox} cremas por ${formatCLP(distributor.minTotal)} (${formatCLP(distributor.unitCost)} c/u). ¿Coordinamos tu pedido?`,
   )}`
 
   const patch = (body, msg) => mutate(`/admin/distributors/${lead.id}`, { method: 'PATCH', body }).then(() => { if (msg) toast(msg); onChange() }).catch((e) => toast(e.message, 'error'))
@@ -37,8 +38,8 @@ function Lead({ lead, mutate, onChange }) {
           <p className="text-sm">{lead.name} · {lead.city}, {lead.region}{lead.rut ? ` · RUT ${lead.rut}` : ''}</p>
           <p className="text-sm text-muted">{lead.phone} · {lead.email}</p>
           <p className="mt-2 text-sm">
-            Quiere <strong>{lead.boxes} embalajes</strong> ({units} cremas · {formatCLP(units * DISTRIBUTOR.unitCost)})
-            {lead.boxes < DISTRIBUTOR.minBoxes && <span className="ml-2 text-warning">bajo el mínimo</span>}
+            Quiere <strong>{lead.boxes} embalajes</strong> ({units} cremas · {formatCLP(units * distributor.unitCost)})
+            {lead.boxes < distributor.minBoxes && <span className="ml-2 text-warning">bajo el mínimo</span>}
           </p>
           {lead.message && <p className="mt-2 whitespace-pre-line rounded-xl bg-bone p-3 text-sm">“{lead.message}”</p>}
           <p className="mt-2 text-xs text-muted">{new Date(lead.createdAt).toLocaleString('es-CL', { day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}</p>
@@ -64,11 +65,12 @@ function Lead({ lead, mutate, onChange }) {
 }
 
 export default function Distributors() {
+  const distributor = useDistributor()
   const { data, error, loading, reload, mutate } = useAdminData('/admin/distributors')
   const [filter, setFilter] = useState('all')
   const list = (data || []).filter((l) => filter === 'all' || l.status === filter)
   return (
-    <AdminPage title="Distribuidores" description={`Postulaciones al programa (mínimo ${DISTRIBUTOR.minBoxes} embalajes · ${formatCLP(DISTRIBUTOR_MIN_TOTAL)}).`}>
+    <AdminPage title="Distribuidores" description={`Postulaciones al programa (mínimo ${distributor.minBoxes} embalajes · ${formatCLP(distributor.minTotal)}).`}>
       <div className="mb-5 flex flex-wrap gap-1">
         {['all', ...Object.keys(LEAD_STATUS)].map((k) => (
           <button key={k} type="button" onClick={() => setFilter(k)} className={`rounded-full px-4 py-2 text-sm transition-colors ${filter === k ? 'bg-ink text-paper' : 'text-muted hover:bg-ink/5 hover:text-ink'}`}>

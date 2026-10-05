@@ -1,32 +1,5 @@
-// Tarifas de despacho por región (CLP) y couriers con su página de seguimiento.
-
-export const SHIPPING_RATES = {
-  'Arica y Parinacota': 7000,
-  'Tarapacá': 7000,
-  'Antofagasta': 6000,
-  'Atacama': 5000,
-  'Coquimbo': 5000,
-  'Valparaíso': 3000,
-  'Metropolitana de Santiago': 3000,
-  "Libertador General Bernardo O'Higgins": 3000,
-  'Maule': 4000,
-  'Ñuble': 4000,
-  'Biobío': 4000,
-  'La Araucanía': 5000,
-  'Los Ríos': 5000,
-  'Los Lagos': 6000,
-  'Aysén del General Carlos Ibáñez del Campo': 8000,
-  'Magallanes y de la Antártica Chilena': 10000,
-}
-
-// Envío gratis desde este subtotal (después de descuentos). null = desactivado.
-export const FREE_SHIPPING_FROM = 150000
-
-export function shippingCostFor(region, subtotalAfterDiscount) {
-  if (!region || !(region in SHIPPING_RATES)) return null
-  if (FREE_SHIPPING_FROM !== null && subtotalAfterDiscount >= FREE_SHIPPING_FROM) return 0
-  return SHIPPING_RATES[region]
-}
+// Couriers con su página de seguimiento. Las tarifas por región y el envío gratis se editan
+// en Admin → Ajustes (shared/storeConfig.js).
 
 export const COURIERS = {
   starken: {

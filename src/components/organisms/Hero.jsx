@@ -70,15 +70,19 @@ export function Hero({ product }) {
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 1.1, ease, delay: 0.2 }}
           >
-            <img
-              src="/img/product-hero.webp"
-              srcSet="/img/product-hero-560.webp 560w, /img/product-hero.webp 1024w"
-              sizes="(min-width: 1024px) 600px, 92vw"
-              alt={product ? `${product.brand} ${product.title}` : 'DASHU Down Permanent'}
-              className="h-full w-full object-cover"
-              style={{ WebkitMaskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)' }}
-              fetchPriority="high"
-            />
+            <div
+              className="sheen h-full w-full"
+              style={{ '--sheen-delay': '1.2s', WebkitMaskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)', maskImage: 'radial-gradient(closest-side, #000 72%, transparent 100%)' }}
+            >
+              <img
+                src="/img/product-hero.webp"
+                srcSet="/img/product-hero-560.webp 560w, /img/product-hero.webp 1024w"
+                sizes="(min-width: 1024px) 600px, 92vw"
+                alt={product ? `${product.brand} ${product.title}` : 'DASHU Down Permanent'}
+                className="h-full w-full object-cover"
+                fetchPriority="high"
+              />
+            </div>
             {chips.map((chip) => (
               <motion.span
                 key={chip.text}

@@ -1,5 +1,6 @@
-import { Component, Suspense, lazy } from 'react'
+import { Component, Suspense, lazy, useEffect } from 'react'
 import { Navigate, Route, Routes, useParams } from 'react-router-dom'
+import { useStoreConfig } from './store/storeConfig'
 import { StoreLayout } from './components/templates/StoreLayout'
 import { Button } from './components/atoms/Button'
 import Home from './pages/Home'
@@ -51,6 +52,10 @@ function LegacyOrderRedirect() {
 const Loading = () => <div className="min-h-[50vh]" aria-busy="true" />
 
 export default function App() {
+  // Ajustes de la tienda (envíos, distribuidores, anuncios, redes) desde Admin → Ajustes.
+  useEffect(() => {
+    void useStoreConfig.getState().load()
+  }, [])
   return (
     <ErrorBoundary>
       <Suspense fallback={<Loading />}>

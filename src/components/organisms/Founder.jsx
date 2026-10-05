@@ -10,10 +10,33 @@ const ease = [0.16, 1, 0.3, 1]
 function Portrait() {
   const initials = FOUNDER.name.split(' ').map((w) => w[0]).join('')
   return (
-    // En celular es una tarjeta apaisada (no ocupa una pantalla entera); en escritorio, vertical.
-    <div className="grain relative aspect-[16/11] overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl">
+    // Con foto: vertical 4:5 con el nombre sobre un degradado, con tamaño contenido en todo dispositivo
+    // (ancho según pantalla y nunca más alto que ~55–65% del alto visible). Sin foto: monograma.
+    <div
+      className={`relative overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl ${
+        FOUNDER.photo
+          ? 'sheen mx-auto aspect-[4/5] w-full max-w-[min(280px,calc(55svh*0.8))] sm:max-w-[min(340px,calc(60svh*0.8))] lg:max-w-[min(400px,calc(65svh*0.8))]'
+          : 'grain aspect-[16/11]'
+      }`}
+      style={{ containerType: 'inline-size', '--sheen-delay': '2.5s' }}
+    >
       {FOUNDER.photo ? (
-        <img src={FOUNDER.photo} alt={FOUNDER.name} className="h-full w-full object-cover" loading="lazy" />
+        <>
+          <img
+            src={FOUNDER.photo}
+            srcSet={`${FOUNDER.photo.replace(/\.webp$/, '-600.webp')} 600w, ${FOUNDER.photo} 1100w`}
+            sizes="(min-width: 1024px) 400px, 340px"
+            alt={`${FOUNDER.name}, ${FOUNDER.role}`}
+            className="h-full w-full object-cover object-top"
+            loading="lazy"
+          />
+          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
+          {/* Texto proporcional al ancho de la tarjeta (unidades cqw), para que no tape la cara en tarjetas chicas. */}
+          <div className="absolute inset-x-0 bottom-0 text-paper" style={{ padding: 'clamp(0.75rem, 7cqw, 1.75rem)' }}>
+            <p className="font-display font-bold leading-tight" style={{ fontSize: 'clamp(0.95rem, 7.5cqw, 1.5rem)' }}>{FOUNDER.name}</p>
+            <p className="leading-snug text-paper/75" style={{ fontSize: 'clamp(0.68rem, 4.2cqw, 0.875rem)' }}>{FOUNDER.role}</p>
+          </div>
+        </>
       ) : (
         <div className="flex h-full flex-col justify-between p-6 text-paper sm:p-8">
           <div aria-hidden="true" className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold/20 blur-3xl" />

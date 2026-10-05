@@ -1,32 +1,61 @@
 import { z } from 'zod'
 import { prisma } from '../lib/prisma.js'
 import { handler, pathSegments, methodNotAllowed, body, parseId, siteUrl, HttpError } from '../lib/http.js'
-import { checkPassword, startSession, endSession, readSession, requireAdmin, signState, verifyState } from '../lib/auth.js'
+import { login, startSession, endSession, readSession, requireAdmin, requireOwner, requireSameOrigin, publicAdmin, signState, verifyState } from '../lib/auth.js'
+import { updateAccount, listTeam, createMember, updateMember } from '../lib/adminUsers.js'
 import { changeStatus, releaseExpiredOrders } from '../lib/orders.js'
 import { listProducts, createProduct, updateProduct, deleteProduct, saveImage } from '../lib/catalog.js'
 import { ORDER_STATUS, PAID_STATUSES } from '../shared/orderStatus.js'
 import { LEAD_STATUS } from '../shared/seminars.js'
 import { adminSeminarList, adminSeminar, saveSeminar, deleteSeminar, addManualEnrollment, setEnrollmentStatus, syncCalendar } from '../lib/seminars.js'
 import { googleConfigured, googleStatus, authUrl, connectWithCode, disconnect } from '../lib/google.js'
+import { getStoreConfig, saveStoreConfig } from '../lib/storeConfig.js'
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
 // ---------- Sesión ----------
 async function session(req, res) {
-  if (req.method === 'GET') return res.status(200).json({ authenticated: Boolean(readSession(req)) })
+  if (req.method === 'GET') {
+    const user = await readSession(req)
+    return res.status(200).json({ authenticated: Boolean(user), user: user ? publicAdmin(user) : null })
+  }
   if (req.method === 'DELETE') {
     endSession(res)
     return res.status(200).json({ ok: true })
   }
   if (req.method === 'POST') {
-    const { password } = body(req)
-    if (!checkPassword(password)) {
-      await sleep(700)
-      throw new HttpError(401, 'Contraseña incorrecta')
+    try {
+      const user = await login(body(req))
+      startSession(res, user)
+      return res.status(200).json({ authenticated: true, user: publicAdmin(user) })
+    } catch (error) {
+      // Pausa ante cualquier fallo: frena los intentos automáticos de adivinar claves.
+      await sleep(600)
+      throw error
     }
-    startSession(res)
-    return res.status(200).json({ authenticated: true })
   }
+  return methodNotAllowed(res)
+}
+
+// ---------- Mi cuenta y equipo ----------
+async function account(req, res, user) {
+  if (req.method === 'GET') return res.status(200).json(publicAdmin(user))
+  if (req.method === 'PATCH') {
+    const updated = await updateAccount(user, body(req))
+    startSession(res, updated) // la sesión actual sigue abierta con la nueva versión
+    return res.status(200).json(publicAdmin(updated))
+  }
+  return methodNotAllowed(res)
+}
+
+async function team(req, res, user, id) {
+  requireOwner(user)
+  if (!id) {
+    if (req.method === 'GET') return res.status(200).json(await listTeam())
+    if (req.method === 'POST') return res.status(201).json(await createMember(body(req)))
+    return methodNotAllowed(res)
+  }
+  if (req.method === 'PATCH') return res.status(200).json(await updateMember(user, parseId(id), body(req)))
   return methodNotAllowed(res)
 }
 
@@ -155,6 +184,13 @@ async function products(req, res, id) {
   const productId = parseId(id)
   if (req.method === 'PATCH') return res.status(200).json(await updateProduct(productId, body(req)))
   if (req.method === 'DELETE') return res.status(200).json(await deleteProduct(productId))
+  return methodNotAllowed(res)
+}
+
+// ---------- Ajustes de la tienda ----------
+async function settings(req, res) {
+  if (req.method === 'GET') return res.status(200).json(await getStoreConfig())
+  if (req.method === 'PUT') return res.status(200).json(await saveStoreConfig(body(req)))
   return methodNotAllowed(res)
 }
 
@@ -333,11 +369,16 @@ async function distributors(req, res, id) {
 export default handler(async (req, res) => {
   res.setHeader('Cache-Control', 'no-store')
   const [section, id, action] = pathSegments(req, /^\/api\/admin\/?/)
+  requireSameOrigin(req)
   if (section === 'session') return session(req, res)
   if (section === 'google' && id === 'callback') return googleCallback(req, res)
 
-  requireAdmin(req)
+  const user = await requireAdmin(req)
+  if (section === 'account') return account(req, res, user)
+  // Con clave temporal solo se puede entrar a "Mi cuenta" hasta crear una propia.
+  if (user.mustChangePassword) throw new HttpError(403, 'Crea tu nueva contraseña para continuar', { mustChangePassword: true })
   switch (section) {
+    case 'team': return team(req, res, user, id)
     case 'seminars': return seminars(req, res, id, action)
     case 'enrollments': return enrollments(req, res, id)
     case 'google': return google(req, res, id)
@@ -351,6 +392,7 @@ export default handler(async (req, res) => {
     case 'coupons': return coupons(req, res, id)
     case 'reviews': return reviews(req, res, id)
     case 'messages': return messages(req, res, id)
+    case 'settings': return settings(req, res)
     default: throw new HttpError(404, 'No encontrado')
   }
 })

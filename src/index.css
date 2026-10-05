@@ -99,6 +99,49 @@
   .spark {
     animation: spark-burst 1.3s cubic-bezier(0.22, 1, 0.36, 1) both;
   }
+  /* Destello dorado que cruza la imagen cada tanto (solo fotos destacadas, nunca antes/después).
+     --sheen-delay desfasa imágenes vecinas para que no brillen todas a la vez. */
+  .sheen {
+    position: relative;
+    overflow: hidden;
+    isolation: isolate;
+  }
+  .sheen::after {
+    content: '';
+    position: absolute;
+    inset: -25% auto -25% 0;
+    width: 30%;
+    opacity: 1; /* por si el elemento también usa .grain, que comparte ::after */
+    pointer-events: none;
+    /* Dorado translúcido (mezcla normal): se nota igual sobre fondos claros y oscuros. */
+    background: linear-gradient(
+      100deg,
+      transparent 0%,
+      rgba(201, 162, 126, 0.08) 30%,
+      rgba(226, 198, 171, 0.32) 46%,
+      rgba(255, 238, 210, 0.5) 50%,
+      rgba(226, 198, 171, 0.32) 54%,
+      rgba(201, 162, 126, 0.08) 70%,
+      transparent 100%
+    );
+    transform: translateX(-180%) skewX(-14deg);
+    animation: sheen-sweep 7s cubic-bezier(0.45, 0, 0.25, 1) var(--sheen-delay, 1.5s) infinite;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .sheen::after {
+      display: none;
+    }
+  }
+}
+
+@keyframes sheen-sweep {
+  0% {
+    transform: translateX(-180%) skewX(-14deg);
+  }
+  22%,
+  100% {
+    transform: translateX(340%) skewX(-14deg);
+  }
 }
 
 @keyframes spark-burst {
