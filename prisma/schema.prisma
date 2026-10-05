@@ -34,12 +34,16 @@ model Product {
 
 // Formato de venta: unidad suelta (units = 1) o pack de N unidades.
 model Pack {
-  id        Int     @id @default(autoincrement())
-  productId Int
-  units     Int
-  price     Int // precio total del pack
-  isActive  Boolean @default(true)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id           Int       @id @default(autoincrement())
+  productId    Int
+  units        Int
+  price        Int // precio total del pack (precio normal)
+  isActive     Boolean   @default(true)
+  // Oferta: precio rebajado con fechas opcionales (sin fechas = vigente hasta quitarla).
+  salePrice    Int?
+  saleStartsAt DateTime?
+  saleEndsAt   DateTime?
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, units])
 }

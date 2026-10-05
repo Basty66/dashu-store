@@ -3,7 +3,8 @@ import { Link, NavLink, useLocation } from 'react-router-dom'
 import { AnimatePresence, motion, useMotionValueEvent, useScroll, useSpring } from 'framer-motion'
 import { ShoppingBag, MessageCircle, ArrowUpRight } from 'lucide-react'
 import { useCart, cartCount } from '../../store/cart'
-import { whatsappLink } from '../../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../../lib/contact'
+import { SocialLinks } from '../molecules/SocialLinks'
 import { useScrollLock } from '../../lib/smoothScroll'
 import { Logo } from '../atoms/Logo'
 
@@ -28,7 +29,8 @@ function MenuIcon({ open }) {
 }
 
 function MobileMenu({ open, onClose }) {
-  const wa = whatsappLink()
+  const waNumber = useWhatsappNumber()
+  const wa = whatsappLink(waNumber)
   useScrollLock(open)
   useEffect(() => {
     if (!open) return
@@ -70,6 +72,9 @@ function MobileMenu({ open, onClose }) {
                 </a>
               </motion.li>
             )}
+            <motion.li className="pt-6" variants={{ hidden: { opacity: 0 }, show: { opacity: 1, transition: { duration: 0.4 } } }}>
+              <SocialLinks tone="dark" />
+            </motion.li>
           </motion.ul>
         </motion.nav>
       )}

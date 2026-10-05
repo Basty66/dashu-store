@@ -10,6 +10,24 @@ export function formatCLP(amount) {
   return clpFormatter.format(Math.round(amount || 0))
 }
 
+// Oferta vigente de un formato: precio rebajado dentro de sus fechas (sin fecha = sin límite).
+export function isSaleActive(pack, now = new Date()) {
+  if (!pack.salePrice || pack.salePrice >= pack.price) return false
+  const t = now.getTime()
+  if (pack.saleStartsAt && new Date(pack.saleStartsAt).getTime() > t) return false
+  if (pack.saleEndsAt && new Date(pack.saleEndsAt).getTime() <= t) return false
+  return true
+}
+
+// Precio que se cobra hoy: el de oferta si está vigente, si no el normal.
+export function effectivePrice(pack, now = new Date()) {
+  return isSaleActive(pack, now) ? pack.salePrice : pack.price
+}
+
+export function discountPercent(regularPrice, price) {
+  return regularPrice > 0 ? Math.round((1 - price / regularPrice) * 100) : 0
+}
+
 export function packUnitPrice(pack) {
   return Math.round(pack.price / pack.units)
 }

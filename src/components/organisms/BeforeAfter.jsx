@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react'
 import { MoveHorizontal, X, Check } from 'lucide-react'
 import { SectionHeading } from '../molecules/SectionHeading'
+import { InstagramReels } from './InstagramReels'
 
 const srcSet = (src) => (src.endsWith('.webp') ? `${src.replace('.webp', '-800.webp')} 800w, ${src} 1408w` : undefined)
 
@@ -65,6 +66,9 @@ export function BeforeAfter({ before = '/img/antes.webp', after = '/img/despues.
           </div>
           <figcaption className="mt-3 text-xs text-muted">Imagen referencial. Los resultados varían según el tipo y largo del cabello.</figcaption>
         </figure>
+      </div>
+      <div className="container-x mt-14 sm:mt-20">
+        <InstagramReels />
       </div>
     </section>
   )

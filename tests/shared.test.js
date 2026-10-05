@@ -2,7 +2,8 @@ import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { formatCLP, packUnitPrice, packSavings, couponDiscount, nextPackUpsell, referenceUnitPrice } from '../shared/pricing.js'
 import { isValidRut, formatRut, cleanRut } from '../shared/rut.js'
-import { shippingCostFor, resolveTrackingUrl, SHIPPING_RATES, FREE_SHIPPING_FROM } from '../shared/shipping.js'
+import { resolveTrackingUrl } from '../shared/shipping.js'
+import { DEFAULT_STORE_CONFIG, shippingCostFor } from '../shared/storeConfig.js'
 import { REGIONS, communesOf, isValidCommune } from '../shared/chile.js'
 import { checkoutSchema, fieldErrors } from '../shared/checkoutSchema.js'
 import { ADMIN_TRANSITIONS, ORDER_STATUS } from '../shared/orderStatus.js'
@@ -51,15 +52,17 @@ test('RUT chileno', () => {
 test('regiones y comunas completas', () => {
   assert.equal(REGIONS.length, 16)
   assert.equal(REGIONS.reduce((n, r) => n + r.communes.length, 0), 346)
-  for (const region of REGIONS) assert.ok(region.name in SHIPPING_RATES, `falta tarifa: ${region.name}`)
+  for (const region of REGIONS) assert.ok(region.name in DEFAULT_STORE_CONFIG.shipping.rates, `falta tarifa: ${region.name}`)
   assert.ok(communesOf('Metropolitana de Santiago').includes('Melipilla'))
   assert.equal(isValidCommune('Valparaíso', 'Maipú'), false)
 })
 
 test('costo de envío por región y envío gratis', () => {
-  assert.equal(shippingCostFor('Magallanes y de la Antártica Chilena', 10000), 10000)
-  assert.equal(shippingCostFor('Región inventada', 10000), null)
-  if (FREE_SHIPPING_FROM !== null) assert.equal(shippingCostFor('Maule', FREE_SHIPPING_FROM), 0)
+  const shipping = DEFAULT_STORE_CONFIG.shipping
+  assert.equal(shippingCostFor(shipping, 'Magallanes y de la Antártica Chilena', 10000), 10000)
+  assert.equal(shippingCostFor(shipping, 'Región inventada', 10000), null)
+  assert.equal(shippingCostFor(shipping, 'Maule', shipping.freeFrom), 0)
+  assert.equal(shippingCostFor({ ...shipping, freeFrom: null }, 'Maule', 9_999_999), shipping.rates.Maule)
 })
 
 test('link de seguimiento por courier', () => {

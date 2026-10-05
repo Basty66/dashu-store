@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, XCircle, CalendarPlus, CreditCard, MapPin, Refresh
 import { formatSeminarDate, seminarTimeLabel, googleCalendarLink, ENROLLMENT_STATUS } from '@shared/seminars.js'
 import { formatCLP } from '@shared/pricing.js'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { toast } from '../store/toast'
 import { useSeo } from '../hooks/useSeo'
 import { Badge } from '../components/atoms/Badge'
@@ -23,6 +23,7 @@ const heads = {
 }
 
 export default function EnrollmentPage() {
+  const waNumber = useWhatsappNumber()
   const { code } = useParams()
   const [params, setParams] = useSearchParams()
   const token = params.get('t')
@@ -84,7 +85,7 @@ export default function EnrollmentPage() {
   const s = e.seminar
   const [Icon, color, title, text] = heads[e.status] || heads.PENDIENTE_PAGO
   const first = e.name.split(' ')[0]
-  const wa = whatsappLink(`Hola, tengo una consulta sobre mi inscripción ${e.code} (${s.title}, ${s.city})`)
+  const wa = whatsappLink(waNumber, `Hola, tengo una consulta sobre mi inscripción ${e.code} (${s.title}, ${s.city})`)
 
   return (
     <div className="container-x max-w-4xl py-10 lg:py-14">

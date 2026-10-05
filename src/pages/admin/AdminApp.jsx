@@ -14,6 +14,7 @@ import Seminars from './Seminars'
 import SeminarEditor from './SeminarEditor'
 import Distributors from './Distributors'
 import { Reviews, Messages } from './Inbox'
+import Settings from './Settings'
 
 // Protege las rutas del panel: sin sesión válida redirige al login.
 function RequireSession({ children }) {
@@ -56,6 +57,7 @@ export default function AdminApp() {
         <Route path="cupones" element={<Coupons />} />
         <Route path="resenas" element={<Reviews />} />
         <Route path="mensajes" element={<Messages />} />
+        <Route path="ajustes" element={<Settings />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Route>
     </Routes>

@@ -2,16 +2,17 @@ import { CalendarX, MessageCircle } from 'lucide-react'
 import { FOUNDER } from '@shared/store.js'
 import { useSeminars } from '../hooks/useSeminars'
 import { useSeo } from '../hooks/useSeo'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { Button } from '../components/atoms/Button'
 import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState, EmptyState } from '../components/molecules/Feedback'
 import { SeminarCard } from '../components/organisms/SeminarCard'
 
 export default function Seminars() {
+  const waNumber = useWhatsappNumber()
   useSeo({ title: 'Capacitaciones', description: `Seminarios y clases prácticas de alisado con ${FOUNDER.name}. Revisa fechas, cupos e inscríbete.` })
   const { data, error, loading, retry } = useSeminars()
-  const wa = whatsappLink('Hola, quiero llevar una capacitación de DASHU a mi barbería')
+  const wa = whatsappLink(waNumber, 'Hola, quiero llevar una capacitación de DASHU a mi barbería')
   const cities = [...new Set((data || []).map((s) => s.city))]
 
   return (

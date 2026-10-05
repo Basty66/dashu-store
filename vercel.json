@@ -46,6 +46,10 @@
       "destination": "/api/public"
     },
     {
+      "source": "/api/settings",
+      "destination": "/api/public"
+    },
+    {
       "source": "/((?!api/).*)",
       "destination": "/index.html"
     }
@@ -72,7 +76,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.mercadopago.cl https://*.mercadopago.com"
+          "value": "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-src https://www.instagram.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.mercadopago.cl https://*.mercadopago.com"
         }
       ]
     },

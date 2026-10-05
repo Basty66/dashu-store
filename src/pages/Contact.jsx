@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { Mail, MessageCircle, Clock, CheckCircle2 } from 'lucide-react'
-import { STORE } from '@shared/store.js'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
+import { useConfig } from '../store/storeConfig'
 import { Button } from '../components/atoms/Button'
 import { Input, Select, Textarea } from '../components/atoms/Input'
 import { Field } from '../components/molecules/Field'
@@ -11,9 +11,11 @@ import { PageShell } from '../components/templates/PageShell'
 const empty = { name: '', email: '', phone: '', subject: 'Consulta sobre productos', message: '' }
 
 export default function Contact() {
+  const waNumber = useWhatsappNumber()
   const [form, setForm] = useState(empty)
   const [state, setState] = useState({ sending: false, done: false, error: '', fields: {} })
-  const wa = whatsappLink()
+  const wa = whatsappLink(waNumber)
+  const contact = useConfig((c) => c.contact)
   const set = (key) => (e) => setForm((f) => ({ ...f, [key]: e.target.value }))
 
   async function submit(e) {
@@ -33,9 +35,9 @@ export default function Contact() {
       <div className="grid gap-8 lg:grid-cols-12">
         <aside className="space-y-4 lg:col-span-4">
           {[
-            [Mail, 'Email', <a key="m" href={`mailto:${STORE.email}`} className="underline decoration-gold underline-offset-4">{STORE.email}</a>],
+            [Mail, 'Email', <a key="m" href={`mailto:${contact.email}`} className="underline decoration-gold underline-offset-4">{contact.email}</a>],
             wa && [MessageCircle, 'WhatsApp', <a key="w" href={wa} target="_blank" rel="noopener noreferrer" className="underline decoration-gold underline-offset-4">Abrir conversación</a>],
-            [Clock, 'Horario', STORE.hours],
+            [Clock, 'Horario', contact.hours],
           ].filter(Boolean).map(([Icon, title, content]) => (
             <div key={title} className="flex gap-4 rounded-3xl border border-sand bg-paper p-5">
               <Icon size={20} className="mt-0.5 text-gold-deep" aria-hidden="true" />

@@ -9,7 +9,7 @@ import { useCart } from '../store/cart'
 import { useQuote } from '../hooks/useQuote'
 import { useSeo } from '../hooks/useSeo'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { Button } from '../components/atoms/Button'
 import { Input, Select, Textarea } from '../components/atoms/Input'
 import { Field } from '../components/molecules/Field'
@@ -42,6 +42,7 @@ function Step({ n, title, children }) {
 }
 
 export default function Checkout() {
+  const waNumber = useWhatsappNumber()
   useSeo({ title: 'Checkout' })
   const items = useCart((s) => s.items)
   const clearCart = useCart((s) => s.clear)
@@ -104,7 +105,7 @@ export default function Checkout() {
 
   const blocked = quote?.problems?.length > 0 || (coupon && quote?.couponError)
   const paymentsOff = quote && quote.paymentsEnabled === false
-  const wa = whatsappLink('Hola, quiero completar una compra en DASHU STORE')
+  const wa = whatsappLink(waNumber, 'Hola, quiero completar una compra en DASHU STORE')
 
   return (
     <div className="container-x py-8 sm:py-10 lg:py-14">

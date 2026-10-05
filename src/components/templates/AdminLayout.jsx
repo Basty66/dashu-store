@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { NavLink, useLocation, useNavigate, useOutlet } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
-import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Mail, LogOut, ExternalLink, Menu, X, GraduationCap, Store } from 'lucide-react'
+import { LayoutDashboard, Package, ShoppingCart, Ticket, Star, Mail, LogOut, ExternalLink, Menu, X, GraduationCap, Store, SlidersHorizontal } from 'lucide-react'
 import { api } from '../../lib/api'
 import { Logo } from '../atoms/Logo'
 import { Toaster } from '../organisms/Chrome'
@@ -22,6 +22,7 @@ const nav = [
   { to: '/admin/cupones', label: 'Cupones', icon: Ticket },
   { to: '/admin/resenas', label: 'Reseñas', icon: Star },
   { to: '/admin/mensajes', label: 'Mensajes', icon: Mail },
+  { to: '/admin/ajustes', label: 'Ajustes', icon: SlidersHorizontal },
 ]
 
 export function AdminLayout() {

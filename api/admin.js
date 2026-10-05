@@ -8,6 +8,7 @@ import { ORDER_STATUS, PAID_STATUSES } from '../shared/orderStatus.js'
 import { LEAD_STATUS } from '../shared/seminars.js'
 import { adminSeminarList, adminSeminar, saveSeminar, deleteSeminar, addManualEnrollment, setEnrollmentStatus, syncCalendar } from '../lib/seminars.js'
 import { googleConfigured, googleStatus, authUrl, connectWithCode, disconnect } from '../lib/google.js'
+import { getStoreConfig, saveStoreConfig } from '../lib/storeConfig.js'
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
 
@@ -155,6 +156,13 @@ async function products(req, res, id) {
   const productId = parseId(id)
   if (req.method === 'PATCH') return res.status(200).json(await updateProduct(productId, body(req)))
   if (req.method === 'DELETE') return res.status(200).json(await deleteProduct(productId))
+  return methodNotAllowed(res)
+}
+
+// ---------- Ajustes de la tienda ----------
+async function settings(req, res) {
+  if (req.method === 'GET') return res.status(200).json(await getStoreConfig())
+  if (req.method === 'PUT') return res.status(200).json(await saveStoreConfig(body(req)))
   return methodNotAllowed(res)
 }
 
@@ -351,6 +359,7 @@ export default handler(async (req, res) => {
     case 'coupons': return coupons(req, res, id)
     case 'reviews': return reviews(req, res, id)
     case 'messages': return messages(req, res, id)
+    case 'settings': return settings(req, res)
     default: throw new HttpError(404, 'No encontrado')
   }
 })

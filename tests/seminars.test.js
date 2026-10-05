@@ -1,7 +1,7 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
 import { dateFromKey, dateKey, eventTimes, googleCalendarLink, seatsLeft, enrollmentSchema, distributorLeadSchema, seminarTimeLabel } from '../shared/seminars.js'
-import { DISTRIBUTOR_MIN_UNITS, DISTRIBUTOR_MIN_TOTAL } from '../shared/store.js'
+import { DEFAULT_STORE_CONFIG, distributorMinimum } from '../shared/storeConfig.js'
 import { buildCalendarEvent } from '../lib/google.js'
 
 const seminar = {
@@ -76,6 +76,7 @@ test('validación de inscripción y postulación de distribuidor', () => {
 })
 
 test('programa de distribuidores: 3 embalajes de 30 a $19.000', () => {
-  assert.equal(DISTRIBUTOR_MIN_UNITS, 90)
-  assert.equal(DISTRIBUTOR_MIN_TOTAL, 1710000)
+  const min = distributorMinimum(DEFAULT_STORE_CONFIG.distributor)
+  assert.equal(min.units, 90)
+  assert.equal(min.total, 1710000)
 })

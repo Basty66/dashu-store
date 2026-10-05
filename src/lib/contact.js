@@ -1,6 +1,13 @@
-export const WHATSAPP_NUMBER = import.meta.env.VITE_WHATSAPP_NUMBER || ''
+import { useConfig } from '../store/storeConfig'
 
-export function whatsappLink(text = 'Hola DASHU STORE, quiero hacer una consulta') {
-  if (!WHATSAPP_NUMBER) return null
-  return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`
+// Respaldo mientras el número no se cargue en Admin → Ajustes.
+const ENV_WHATSAPP = import.meta.env.VITE_WHATSAPP_NUMBER || ''
+
+export function useWhatsappNumber() {
+  return useConfig((c) => c.contact.whatsapp) || ENV_WHATSAPP
+}
+
+export function whatsappLink(number, text = 'Hola DASHU STORE, quiero hacer una consulta') {
+  if (!number) return null
+  return `https://wa.me/${number}?text=${encodeURIComponent(text)}`
 }

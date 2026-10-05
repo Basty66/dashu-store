@@ -1,7 +1,9 @@
 import { Link } from 'react-router-dom'
 import { Mail, MessageCircle, Clock } from 'lucide-react'
 import { STORE } from '@shared/store.js'
-import { whatsappLink } from '../../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../../lib/contact'
+import { useConfig } from '../../store/storeConfig'
+import { SocialLinks } from '../molecules/SocialLinks'
 import { Logo } from '../atoms/Logo'
 
 const columns = [
@@ -28,7 +30,9 @@ const columns = [
 ]
 
 export function Footer() {
-  const wa = whatsappLink()
+  const waNumber = useWhatsappNumber()
+  const wa = whatsappLink(waNumber)
+  const contact = useConfig((c) => c.contact)
   return (
     <footer className="relative overflow-hidden bg-ink text-paper">
       <div className="container-x grid grid-cols-2 gap-x-6 gap-y-10 py-12 sm:py-16 md:grid-cols-12 md:gap-12">
@@ -37,6 +41,7 @@ export function Footer() {
           <p className="mt-5 max-w-sm text-sm leading-relaxed text-paper/60">
             Crema alisadora de origen coreano para el pelo rebelde. Vendemos por unidad y en packs por volumen, con despacho a todo Chile.
           </p>
+          <SocialLinks className="mt-6" />
         </div>
         {columns.map((col) => (
           <nav key={col.title} className="col-span-1 md:col-span-2" aria-label={col.title}>
@@ -53,9 +58,9 @@ export function Footer() {
         <div className="col-span-2 md:col-span-3">
           <p className="eyebrow text-gold">Contacto</p>
           <ul className="mt-4 space-y-3 text-sm text-paper/70">
-            <li className="flex items-center gap-2"><Mail size={15} aria-hidden="true" /><a href={`mailto:${STORE.email}`} className="py-1 hover:text-paper">{STORE.email}</a></li>
+            <li className="flex items-center gap-2"><Mail size={15} aria-hidden="true" /><a href={`mailto:${contact.email}`} className="py-1 hover:text-paper">{contact.email}</a></li>
             {wa && <li className="flex items-center gap-2"><MessageCircle size={15} aria-hidden="true" /><a href={wa} target="_blank" rel="noopener noreferrer" className="py-1 hover:text-paper">WhatsApp</a></li>}
-            <li className="flex items-center gap-2"><Clock size={15} aria-hidden="true" />{STORE.hours}</li>
+            <li className="flex items-center gap-2"><Clock size={15} aria-hidden="true" />{contact.hours}</li>
           </ul>
         </div>
       </div>

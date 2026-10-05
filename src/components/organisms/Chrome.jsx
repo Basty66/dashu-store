@@ -2,37 +2,32 @@ import { useEffect, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import { AnimatePresence, motion } from 'framer-motion'
 import { CheckCircle2, AlertCircle, MessageCircle } from 'lucide-react'
-import { FREE_SHIPPING_FROM } from '@shared/shipping.js'
-import { formatCLP } from '@shared/pricing.js'
 import { useToasts } from '../../store/toast'
 import { useUi } from '../../store/ui'
-import { whatsappLink } from '../../lib/contact'
+import { useConfig } from '../../store/storeConfig'
+import { useWhatsappNumber, whatsappLink } from '../../lib/contact'
 
-const messages = [
-  'Envío a todo Chile con seguimiento',
-  'Packs de 3 y 10 cremas con precio por volumen',
-  FREE_SHIPPING_FROM !== null ? `Envío gratis desde ${formatCLP(FREE_SHIPPING_FROM)}` : 'Boleta o factura para tu negocio',
-  'Paga seguro con Mercado Pago',
-]
-
+// Mensajes editables en Admin → Ajustes.
 export function AnnouncementBar() {
+  const messages = useConfig((c) => c.announcements)
   const [i, setI] = useState(0)
   useEffect(() => {
+    if (messages.length < 2) return undefined
     const t = setInterval(() => setI((n) => (n + 1) % messages.length), 4500)
     return () => clearInterval(t)
-  }, [])
+  }, [messages.length])
   return (
     <div className="relative h-9 overflow-hidden bg-ink text-paper" role="region" aria-label="Anuncios">
       <AnimatePresence mode="wait">
         <motion.p
-          key={i}
+          key={i % messages.length}
           className="absolute inset-0 flex items-center justify-center font-mono text-[0.7rem] uppercase tracking-[0.16em]"
           initial={{ y: 12, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           exit={{ y: -12, opacity: 0 }}
           transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
         >
-          {messages[i]}
+          {messages[i % messages.length]}
         </motion.p>
       </AnimatePresence>
     </div>
@@ -67,7 +62,8 @@ export function Toaster() {
 // En celular: no tapa los botones del inicio (aparece al bajar), se esconde en el
 // checkout y mientras se escribe en un formulario, y sube sobre la barra fija de compra.
 export function WhatsAppFab() {
-  const href = whatsappLink()
+  const waNumber = useWhatsappNumber()
+  const href = whatsappLink(waNumber)
   const bottomBar = useUi((s) => s.bottomBar)
   const { pathname } = useLocation()
   const [scrolled, setScrolled] = useState(false)
