@@ -19,3 +19,6 @@ restart-api.ps1
 # Local
 .claude/
 backups/
+
+# Fotos originales (pesadas o con caras de clientes): se optimizan a public/img
+fotos/
