@@ -18,12 +18,32 @@
       "destination": "/api/webhooks/[...slug]"
     },
     {
-      "source": "/api/products/:path*",
-      "destination": "/api/products"
-    },
-    {
       "source": "/api/seminars/:path*",
       "destination": "/api/seminars"
+    },
+    {
+      "source": "/api/products/:path*",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/images/:path*",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/contact",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/reviews",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/distributors",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/public"
     },
     {
       "source": "/((?!api/).*)",
