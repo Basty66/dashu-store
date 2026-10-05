@@ -10,10 +10,24 @@ const ease = [0.16, 1, 0.3, 1]
 function Portrait() {
   const initials = FOUNDER.name.split(' ').map((w) => w[0]).join('')
   return (
-    // En celular es una tarjeta apaisada (no ocupa una pantalla entera); en escritorio, vertical.
-    <div className="grain relative aspect-[16/11] overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl">
+    // Con foto: vertical 4:5 con el nombre sobre un degradado. Sin foto: monograma (apaisado en celular).
+    <div className={`grain relative overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl ${FOUNDER.photo ? 'aspect-[4/5]' : 'aspect-[16/11]'}`}>
       {FOUNDER.photo ? (
-        <img src={FOUNDER.photo} alt={FOUNDER.name} className="h-full w-full object-cover" loading="lazy" />
+        <>
+          <img
+            src={FOUNDER.photo}
+            srcSet={`${FOUNDER.photo.replace(/\.webp$/, '-600.webp')} 600w, ${FOUNDER.photo} 1100w`}
+            sizes="(min-width: 1024px) 40vw, 100vw"
+            alt={`${FOUNDER.name}, ${FOUNDER.role}`}
+            className="h-full w-full object-cover object-top"
+            loading="lazy"
+          />
+          <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
+          <div className="absolute inset-x-0 bottom-0 p-5 text-paper sm:p-7">
+            <p className="font-display text-xl font-bold sm:text-2xl">{FOUNDER.name}</p>
+            <p className="text-sm text-paper/75">{FOUNDER.role}</p>
+          </div>
+        </>
       ) : (
         <div className="flex h-full flex-col justify-between p-6 text-paper sm:p-8">
           <div aria-hidden="true" className="absolute -right-24 -top-24 h-72 w-72 rounded-full bg-gold/20 blur-3xl" />

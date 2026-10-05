@@ -19,7 +19,7 @@ export const FOUNDER = {
   city: 'Melipilla',
   yearsInBarbering: 11,
   // Ruta de una foto en /public (ej: '/img/tomas.webp'). Sin foto se muestra un monograma.
-  photo: null,
+  photo: '/img/tomas.webp',
 }
 
 // Formatos sugeridos al crear un producto nuevo (unidades por pack).

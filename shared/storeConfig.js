@@ -14,10 +14,17 @@ export const DEFAULT_STORE_CONFIG = {
   contact: { whatsapp: '', email: 'contacto@dashu.store', hours: 'Lunes a viernes, 10:00 a 18:00' },
   // Links completos a los perfiles. Vacío = no se muestra.
   social: { instagram: 'https://www.instagram.com/dashu.cl/', tiktok: '', facebook: '', youtube: '' },
-  // Casos de antes y después (carrusel). "reference" = imagen referencial, no un cliente real.
+  // Casos de antes y después (clientes reales de Tomás). "reference" = imagen referencial, no un cliente real.
   results: [
-    { before: '/img/antes.webp', after: '/img/despues.webp', caption: 'Pelo lateral levantado → peinado en 10 minutos', reference: true },
-  ],
+    ['7156', '7157', 'Puntas rebeldes → liso y natural'],
+    ['7158', '7159', 'Pelo esponjado → costados disciplinados'],
+    ['7185', '7186', 'Pelo parado → peinado hacia atrás'],
+    ['7150', '7151', 'Puntas paradas → raya al lado definida'],
+    ['7167', '7168', 'Costados levantados → raya marcada'],
+    ['7171', '7172', 'Pelo erizado → caída natural'],
+    ['7146', '7147', 'Volumen lateral → peinado con forma'],
+    ['7165', '7166', 'Pelo esponjado → peinado ordenado'],
+  ].map(([before, after, caption]) => ({ before: `/img/resultados/${before}.webp`, after: `/img/resultados/${after}.webp`, caption, reference: false })),
   // Reels de Instagram para el carrusel de resultados (sección "Antes y después"). Máximo 8.
   reels: [],
   // Formato marcado como "Más elegido" (unidades). 0 = ninguno.

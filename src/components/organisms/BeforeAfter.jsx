@@ -2,9 +2,11 @@ import { useState } from 'react'
 import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { X, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useConfig } from '../../store/storeConfig'
+import { smallImage } from '../../lib/responsiveImage'
 import { SectionHeading } from '../molecules/SectionHeading'
 import { CompareSlider } from '../molecules/CompareSlider'
 import { InstagramReels } from './InstagramReels'
+import { ResultsRing } from './ResultsRing'
 
 const ease = [0.16, 1, 0.3, 1]
 const arrow = 'grid h-11 w-11 flex-none place-items-center rounded-full border border-ink/15 bg-paper transition-all duration-200 hover:border-ink active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold'
@@ -25,7 +27,7 @@ function CaseThumbs({ results, index, onSelect }) {
               aria-current={i === index ? 'true' : undefined}
               className={`block h-14 w-14 overflow-hidden rounded-2xl ring-offset-2 ring-offset-bone transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold ${i === index ? 'ring-2 ring-ink' : 'opacity-60 hover:opacity-100'}`}
             >
-              <img src={r.after} alt="" className="h-full w-full object-cover" loading="lazy" />
+              <img src={smallImage(r.after)} alt="" className="h-full w-full object-cover" loading="lazy" />
             </button>
           </li>
         ))}
@@ -36,7 +38,7 @@ function CaseThumbs({ results, index, onSelect }) {
   )
 }
 
-// Casos de antes y después (Admin → Ajustes) con comparador, y reels de Instagram.
+// Antes y después (Admin → Ajustes): comparador por caso, galería 360 de pares y reels de Instagram.
 export function BeforeAfter() {
   const results = useConfig((c) => c.results)
   const reduce = useReducedMotion()
@@ -46,8 +48,8 @@ export function BeforeAfter() {
 
   return (
     <section className="bg-bone py-14 sm:py-20 lg:py-28">
-      <div className="container-x grid items-center gap-12 lg:grid-cols-12">
-        <div className="lg:col-span-4">
+      <div className="container-x grid grid-cols-1 items-center gap-12 lg:grid-cols-12">
+        <div className="lg:col-span-5">
           <SectionHeading eyebrow="Antes y después" title="Del erizo al peinado" description="Desliza para comparar. El efecto se concentra en el pelo lateral que se levanta." />
           <ul className="mt-8 space-y-3 text-sm">
             {['Pelo lateral tipo erizo', 'Volumen excesivo en los costados', 'Se levanta con el viento o la humedad'].map((t) => (
@@ -59,7 +61,8 @@ export function BeforeAfter() {
           </ul>
         </div>
 
-        <figure className="lg:col-span-8">
+        {/* Tamaño contenido en todo dispositivo: ancho según pantalla y nunca más alto que ~65% del alto visible. */}
+        <figure className="mx-auto w-full min-w-0 max-w-[min(300px,calc(65svh*0.8))] sm:max-w-[min(380px,calc(65svh*0.8))] lg:col-span-7 lg:max-w-[min(440px,calc(65svh*0.8))]">
           <AnimatePresence mode="wait" initial={false}>
             <motion.div
               key={i}
@@ -78,7 +81,10 @@ export function BeforeAfter() {
           {results.length > 1 && <CaseThumbs results={results} index={i} onSelect={setIndex} />}
         </figure>
       </div>
-      <div className="container-x mt-14 sm:mt-20">
+      <div className="container-x mt-16 sm:mt-24">
+        <ResultsRing />
+      </div>
+      <div className="container-x mt-16 sm:mt-24">
         <InstagramReels />
       </div>
     </section>

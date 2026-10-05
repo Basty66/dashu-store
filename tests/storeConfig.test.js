@@ -57,5 +57,6 @@ test('antes y después: exige ambas fotos y al menos un caso', () => {
   assert.equal(results.safeParse([{ before: 'javascript:alert(1)', after: '/img/despues.webp' }]).success, false)
   const ok = results.parse([{ before: '/api/images/4', after: '/api/images/5', caption: 'Pelo grueso · 3 semanas' }])
   assert.equal(ok[0].reference, false)
-  assert.equal(DEFAULT_STORE_CONFIG.results[0].reference, true)
+  // Los casos por defecto son clientes reales con sus fotos optimizadas.
+  assert.ok(DEFAULT_STORE_CONFIG.results.every((r) => !r.reference && r.before.startsWith('/img/resultados/')))
 })
