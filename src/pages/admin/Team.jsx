@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Navigate } from 'react-router-dom'
-import { UserPlus, KeyRound, Power } from 'lucide-react'
+import { UserPlus, KeyRound, Power, Crown } from 'lucide-react'
 import { useAdminData } from '../../hooks/useAdminData'
 import { toast } from '../../store/toast'
 import { useAdminSession } from '../../store/adminSession'
@@ -51,20 +51,23 @@ function NewMember({ mutate, onDone }) {
   )
 }
 
-function Member({ member, isMe, mutate, onChange }) {
+function Member({ member, isMe, mutate, onChange, onTransferred }) {
   const [resetting, setResetting] = useState(false)
   const [temp, setTemp] = useState('')
+  const [confirmOwner, setConfirmOwner] = useState(false)
   async function patch(body, message) {
     try {
       await mutate(`/admin/team/${member.id}`, { method: 'PATCH', body })
       toast(message)
       setResetting(false)
       setTemp('')
-      onChange()
+      if (body.makeOwner) onTransferred()
+      else onChange()
     } catch (err) {
       toast(err.message, 'error')
     }
   }
+  const canManage = !isMe && member.role !== 'owner'
   return (
     <li className="flex flex-wrap items-center justify-between gap-4 py-4">
       <div className="flex min-w-0 items-center gap-3">
@@ -79,12 +82,24 @@ function Member({ member, isMe, mutate, onChange }) {
           <p className="truncate text-sm text-muted">{member.email} · {member.lastLoginAt ? `último ingreso ${lastSeen.format(new Date(member.lastLoginAt))}` : 'aún no ingresa'}</p>
         </div>
       </div>
-      {!isMe && (
-        <div className="flex gap-2">
+      {canManage && (
+        <div className="flex flex-wrap gap-2">
           <Button size="sm" variant="secondary" onClick={() => setResetting((r) => !r)} aria-expanded={resetting}><KeyRound size={14} aria-hidden="true" /> Clave temporal</Button>
+          {member.isActive && (
+            <Button size="sm" variant="secondary" onClick={() => setConfirmOwner(true)}><Crown size={14} aria-hidden="true" /> Hacer dueño</Button>
+          )}
           <Button size="sm" variant="ghost" className={member.isActive ? 'text-danger' : ''} onClick={() => patch({ isActive: !member.isActive }, member.isActive ? 'Cuenta desactivada' : 'Cuenta reactivada')}>
             <Power size={14} aria-hidden="true" /> {member.isActive ? 'Desactivar' : 'Reactivar'}
           </Button>
+        </div>
+      )}
+      {confirmOwner && (
+        <div className="flex w-full flex-col gap-3 rounded-2xl bg-warning/10 p-4 text-sm sm:flex-row sm:items-center sm:justify-between" role="alert">
+          <p><strong>{member.name}</strong> pasará a ser dueño de la tienda y tú quedarás como administrador. Solo el dueño gestiona el equipo.</p>
+          <div className="flex flex-none gap-2">
+            <Button size="sm" variant="ghost" onClick={() => setConfirmOwner(false)}>Cancelar</Button>
+            <Button size="sm" onClick={() => patch({ makeOwner: true }, `${member.name} ahora es el dueño de la tienda`)}>Confirmar traspaso</Button>
+          </div>
         </div>
       )}
       {resetting && (
@@ -108,7 +123,10 @@ function Member({ member, isMe, mutate, onChange }) {
 // Equipo: quién puede entrar al panel. Solo el dueño lo administra.
 export default function Team() {
   const me = useAdminSession((s) => s.user)
+  const setUser = useAdminSession((s) => s.setUser)
   const { data, error, loading, reload, mutate } = useAdminData(me?.role === 'owner' ? '/admin/team' : null)
+  // Tras traspasar, la sesión pasa a rol administrador y esta página ya no aplica.
+  const afterTransfer = () => mutate('/admin/session').then((r) => setUser(r.user))
   if (me && me.role !== 'owner') return <Navigate to="/admin" replace />
   return (
     <AdminPage title="Equipo" description="Personas con acceso al panel. Cada una entra con su propio correo y contraseña.">
@@ -117,7 +135,7 @@ export default function Team() {
           {error ? <ErrorState message={error.message} onRetry={reload} /> : loading && !data ? (
             <div className="space-y-3">{[0, 1].map((i) => <Skeleton key={i} className="h-14 rounded-2xl" />)}</div>
           ) : (
-            <ul className="divide-y divide-sand">{data.map((m) => <Member key={m.id} member={m} isMe={m.id === me.id} mutate={mutate} onChange={reload} />)}</ul>
+            <ul className="divide-y divide-sand">{data.map((m) => <Member key={m.id} member={m} isMe={m.id === me.id} mutate={mutate} onChange={reload} onTransferred={afterTransfer} />)}</ul>
           )}
         </Card>
         <NewMember mutate={mutate} onDone={reload} />

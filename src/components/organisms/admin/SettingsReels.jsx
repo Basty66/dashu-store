@@ -1,45 +1,10 @@
-import { useRef, useState } from 'react'
-import { Clapperboard, ImagePlus, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
-import { compressImage } from '../../../lib/image'
-import { toast } from '../../../store/toast'
+import { Clapperboard, Plus, Trash2, ChevronUp, ChevronDown } from 'lucide-react'
 import { Button } from '../../atoms/Button'
 import { Input } from '../../atoms/Input'
 import { Card } from '../../templates/AdminLayout'
+import { ImagePicker } from './ImagePicker'
 
 const MAX = 8
-
-function CoverPicker({ cover, onChange, upload, label }) {
-  const input = useRef(null)
-  const [busy, setBusy] = useState(false)
-  async function pick(file) {
-    if (!file) return
-    setBusy(true)
-    try {
-      const { url } = await upload(await compressImage(file, { maxSize: 900 }))
-      onChange(url)
-    } catch (e) {
-      toast(e.message, 'error')
-    } finally {
-      setBusy(false)
-    }
-  }
-  return (
-    <>
-      <button
-        type="button"
-        onClick={() => (cover ? onChange('') : input.current?.click())}
-        disabled={busy}
-        aria-label={cover ? `Quitar portada de ${label}` : `Subir portada para ${label}`}
-        className="group relative grid aspect-[9/16] w-16 flex-none place-items-center overflow-hidden rounded-xl border-2 border-dashed border-sand-300 text-muted transition-colors hover:border-ink hover:text-ink"
-      >
-        {cover ? <img src={cover} alt="" className="absolute inset-0 h-full w-full object-cover" /> : <ImagePlus size={18} aria-hidden="true" />}
-        {cover && <span className="absolute inset-0 grid place-items-center bg-ink/60 text-paper opacity-0 transition-opacity group-hover:opacity-100"><Trash2 size={16} aria-hidden="true" /></span>}
-        {busy && <span className="absolute inset-0 animate-pulse bg-sand" aria-hidden="true" />}
-      </button>
-      <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={(e) => { void pick(e.target.files[0]); e.target.value = '' }} />
-    </>
-  )
-}
 
 // Reels de Instagram para el carrusel de "Antes y después".
 export function SettingsReels({ value, onChange, errors, upload }) {
@@ -59,7 +24,10 @@ export function SettingsReels({ value, onChange, errors, upload }) {
       <ol className="space-y-3">
         {value.map((reel, i) => (
           <li key={i} className="flex gap-3 rounded-2xl border border-sand bg-white p-3">
-            <CoverPicker cover={reel.cover} onChange={(cover) => update(i, { cover })} upload={upload} label={`video ${i + 1}`} />
+            <div className="flex w-16 flex-none flex-col items-center gap-1">
+              <ImagePicker value={reel.cover} onChange={(cover) => update(i, { cover })} upload={upload} label="Portada" ratio="aspect-[9/16]" maxSize={900} className="w-16" />
+              {reel.cover && <button type="button" onClick={() => update(i, { cover: '' })} className="text-2xs text-muted underline-offset-2 hover:text-danger hover:underline">Quitar</button>}
+            </div>
             <div className="min-w-0 flex-1 space-y-2">
               <Input value={reel.url} onChange={(e) => update(i, { url: e.target.value })} placeholder="https://www.instagram.com/reel/…" aria-label={`Link del video ${i + 1}`} invalid={Boolean(errors[`${i}.url`])} />
               {errors[`${i}.url`] && <p className="text-xs text-danger">{errors[`${i}.url`]}</p>}

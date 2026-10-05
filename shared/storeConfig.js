@@ -14,6 +14,10 @@ export const DEFAULT_STORE_CONFIG = {
   contact: { whatsapp: '', email: 'contacto@dashu.store', hours: 'Lunes a viernes, 10:00 a 18:00' },
   // Links completos a los perfiles. Vacío = no se muestra.
   social: { instagram: 'https://www.instagram.com/dashu.cl/', tiktok: '', facebook: '', youtube: '' },
+  // Casos de antes y después (carrusel). "reference" = imagen referencial, no un cliente real.
+  results: [
+    { before: '/img/antes.webp', after: '/img/despues.webp', caption: 'Pelo lateral levantado → peinado en 10 minutos', reference: true },
+  ],
   // Reels de Instagram para el carrusel de resultados (sección "Antes y después"). Máximo 8.
   reels: [],
   // Formato marcado como "Más elegido" (unidades). 0 = ninguno.
@@ -63,6 +67,20 @@ export function instagramEmbedUrl(url) {
   return post ? `https://www.instagram.com/${post.type}/${post.code}/embed/` : null
 }
 
+// Imagen de la tienda: subida desde el admin (/api/images/…), del sitio (/img/…) o externa https.
+const imageRef = z
+  .string()
+  .trim()
+  .max(300)
+  .refine((v) => v.startsWith('/api/images/') || v.startsWith('/img/') || /^https:\/\/\S+$/.test(v), 'Sube la imagen')
+
+const resultSchema = z.object({
+  before: imageRef,
+  after: imageRef,
+  caption: z.string().trim().max(90, 'Máximo 90 caracteres').default(''),
+  reference: z.boolean().default(false),
+})
+
 const reelSchema = z.object({
   url: z.string().trim().refine((v) => parseInstagramUrl(v) !== null, 'Pega el link del reel (instagram.com/reel/…)'),
   caption: z.string().trim().max(80, 'Máximo 80 caracteres').default(''),
@@ -91,6 +109,7 @@ export const storeConfigSchema = z.object({
     hours: z.string().trim().max(80),
   }),
   social: z.object({ instagram: profileUrl, tiktok: profileUrl, facebook: profileUrl, youtube: profileUrl }),
+  results: z.array(resultSchema).min(1, 'Deja al menos un caso').max(8, 'Máximo 8 casos'),
   reels: z.array(reelSchema).max(8, 'Máximo 8 reels'),
   highlightPackUnits: z.number().int().min(0).max(1000),
   distributor: z.object({
@@ -119,6 +138,7 @@ export function readStoreConfig(raw) {
     announcements: saved.announcements ?? d.announcements,
     contact: { ...d.contact, ...saved.contact },
     social: { ...d.social, ...saved.social },
+    results: saved.results ?? d.results,
     reels: saved.reels ?? d.reels,
     highlightPackUnits: saved.highlightPackUnits ?? d.highlightPackUnits,
     distributor: { ...d.distributor, ...saved.distributor },

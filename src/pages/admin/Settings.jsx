@@ -14,6 +14,7 @@ import { AdminPage } from '../../components/templates/AdminLayout'
 import { SettingsAnnouncements } from '../../components/organisms/admin/SettingsAnnouncements'
 import { SettingsContact } from '../../components/organisms/admin/SettingsContact'
 import { SettingsReels } from '../../components/organisms/admin/SettingsReels'
+import { SettingsResults } from '../../components/organisms/admin/SettingsResults'
 import { SettingsDistributor, SettingsHighlight } from '../../components/organisms/admin/SettingsCommerce'
 import { SettingsShipping } from '../../components/organisms/admin/SettingsShipping'
 
@@ -66,7 +67,7 @@ export default function Settings() {
   }
 
   return (
-    <AdminPage title="Ajustes" description="Envíos, distribuidores, anuncios, contacto, redes y videos de la tienda.">
+    <AdminPage title="Ajustes" description="Envíos, distribuidores, anuncios, contacto, redes, antes y después y videos de la tienda.">
       <form id="ajustes" onSubmit={save} noValidate className="grid gap-6 pb-24 lg:grid-cols-2 lg:items-start">
         <div className="space-y-6">
           <SettingsAnnouncements value={form.announcements} onChange={set('announcements')} errors={errorsFor(errors, 'announcements')} />
@@ -75,6 +76,7 @@ export default function Settings() {
         </div>
         <div className="space-y-6">
           <SettingsContact contact={form.contact} social={form.social} onContact={set('contact')} onSocial={set('social')} errors={errors} />
+          <SettingsResults value={form.results} onChange={set('results')} errors={errorsFor(errors, 'results')} upload={upload} />
           <SettingsReels value={form.reels} onChange={set('reels')} errors={errorsFor(errors, 'reels')} upload={upload} />
         </div>
         <div className="lg:col-span-2">

@@ -49,3 +49,13 @@ test('instagram: reconoce reels y publicaciones, arma el reproductor y el @usuar
   assert.equal(instagramEmbedUrl('https://www.instagram.com/reels/DAbc12345/'), 'https://www.instagram.com/reel/DAbc12345/embed/')
   assert.equal(instagramHandle('https://www.instagram.com/dashu.cl/'), '@dashu.cl')
 })
+
+test('antes y después: exige ambas fotos y al menos un caso', () => {
+  const results = storeConfigSchema.shape.results
+  assert.equal(results.safeParse([]).success, false)
+  assert.equal(results.safeParse([{ before: '', after: '/img/despues.webp' }]).success, false)
+  assert.equal(results.safeParse([{ before: 'javascript:alert(1)', after: '/img/despues.webp' }]).success, false)
+  const ok = results.parse([{ before: '/api/images/4', after: '/api/images/5', caption: 'Pelo grueso · 3 semanas' }])
+  assert.equal(ok[0].reference, false)
+  assert.equal(DEFAULT_STORE_CONFIG.results[0].reference, true)
+})
