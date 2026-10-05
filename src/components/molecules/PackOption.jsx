@@ -1,9 +1,14 @@
+import { Clock } from 'lucide-react'
 import { formatCLP, packUnitPrice, packLabel } from '@shared/pricing.js'
+import { packDiscount, saleEndsLabel } from '../../lib/sale'
 import { Badge } from '../atoms/Badge'
 
 // Fila seleccionable de un formato de venta (radio accesible), pensada para comparar precios.
+// Con oferta vigente muestra el precio normal tachado, el % de descuento y cuándo termina.
 export function PackOption({ pack, savings, selected, highlight, disabled, onSelect }) {
-  const compareAt = savings?.amount > 0 ? pack.price + savings.amount : null
+  const discount = packDiscount(pack)
+  const compareAt = discount ? pack.regularPrice : savings?.amount > 0 ? pack.price + savings.amount : null
+  const endsLabel = discount ? saleEndsLabel(pack.saleEndsAt) : null
   return (
     <label
       className={`group relative flex cursor-pointer items-center gap-4 rounded-2xl border bg-white px-4 py-3.5 transition-all duration-200 ease-out sm:px-5
@@ -17,17 +22,31 @@ export function PackOption({ pack, savings, selected, highlight, disabled, onSel
       <span className="min-w-0 flex-1">
         <span className="flex flex-wrap items-center gap-2">
           <span className="font-display text-lg font-bold leading-tight" style={{ fontStretch: '112%' }}>{packLabel(pack.units)}</span>
+          {discount > 0 && <Badge tone="sale">Oferta</Badge>}
           {highlight && <Badge tone="goldSolid">Más elegido</Badge>}
         </span>
         <span className="block text-sm text-muted tabular">
           {pack.units === 1 ? 'Precio unitario' : `${pack.units} unidades · ${formatCLP(packUnitPrice(pack))} c/u`}
         </span>
+        {endsLabel && (
+          <span className="mt-0.5 flex items-center gap-1 text-xs font-medium text-danger">
+            <Clock size={12} aria-hidden="true" /> {endsLabel}
+          </span>
+        )}
         {disabled && <span className="block text-xs text-danger">Sin stock suficiente</span>}
       </span>
       <span className="flex-none text-right tabular">
-        {savings?.percent > 0 && <span className="block text-xs font-medium text-success">Ahorras {savings.percent}%</span>}
+        {discount > 0 ? (
+          <span className="block text-xs font-medium text-danger">−{discount}%</span>
+        ) : (
+          savings?.percent > 0 && <span className="block text-xs font-medium text-success">Ahorras {savings.percent}%</span>
+        )}
         <span className="block font-mono text-[0.95rem] font-medium">{formatCLP(pack.price)}</span>
-        {compareAt && <s className="block text-xs text-muted">{formatCLP(compareAt)}</s>}
+        {compareAt && (
+          <s className="block text-xs text-muted">
+            <span className="sr-only">Antes </span>{formatCLP(compareAt)}
+          </s>
+        )}
       </span>
     </label>
   )

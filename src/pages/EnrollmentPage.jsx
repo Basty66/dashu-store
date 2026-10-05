@@ -4,7 +4,7 @@ import { CheckCircle2, Clock, XCircle, CalendarPlus, CreditCard, MapPin, Refresh
 import { formatSeminarDate, seminarTimeLabel, googleCalendarLink, ENROLLMENT_STATUS } from '@shared/seminars.js'
 import { formatCLP } from '@shared/pricing.js'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { toast } from '../store/toast'
 import { useSeo } from '../hooks/useSeo'
 import { Badge } from '../components/atoms/Badge'
@@ -12,6 +12,7 @@ import { Button } from '../components/atoms/Button'
 import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState } from '../components/molecules/Feedback'
 import { DateBlock } from '../components/molecules/SeminarBits'
+import { ThankYouCard } from '../components/organisms/ThankYouCard'
 
 const heads = {
   PAGADO: [CheckCircle2, 'text-success', (n) => `¡Listo, ${n}! Tu cupo está confirmado`, 'Te enviamos la confirmación por email. Agrega la fecha a tu calendario para no olvidarla.'],
@@ -22,6 +23,7 @@ const heads = {
 }
 
 export default function EnrollmentPage() {
+  const waNumber = useWhatsappNumber()
   const { code } = useParams()
   const [params, setParams] = useSearchParams()
   const token = params.get('t')
@@ -83,7 +85,7 @@ export default function EnrollmentPage() {
   const s = e.seminar
   const [Icon, color, title, text] = heads[e.status] || heads.PENDIENTE_PAGO
   const first = e.name.split(' ')[0]
-  const wa = whatsappLink(`Hola, tengo una consulta sobre mi inscripción ${e.code} (${s.title}, ${s.city})`)
+  const wa = whatsappLink(waNumber, `Hola, tengo una consulta sobre mi inscripción ${e.code} (${s.title}, ${s.city})`)
 
   return (
     <div className="container-x max-w-4xl py-10 lg:py-14">
@@ -92,6 +94,18 @@ export default function EnrollmentPage() {
         <span className="font-mono text-sm font-medium">{e.code}</span>
         <Badge tone={ENROLLMENT_STATUS[e.status]?.tone}>{ENROLLMENT_STATUS[e.status]?.label}</Badge>
       </div>
+
+      {['PAGADO', 'PREINSCRITO'].includes(e.status) && (
+        <div className="mb-8">
+          <ThankYouCard
+            name={first}
+            code={e.code}
+            label={s.city}
+            message={e.status === 'PAGADO' ? 'Gracias por inscribirte,' : 'Gracias por tu interés,'}
+            note={e.status === 'PAGADO' ? 'Nos vemos en la capacitación. Agrega la fecha a tu calendario.' : 'Te avisaremos apenas se confirme el valor.'}
+          />
+        </div>
+      )}
 
       <div className="rounded-4xl border border-sand bg-paper p-6 sm:p-8">
         <div className="flex items-start gap-4">

@@ -9,7 +9,7 @@ const item = { hidden: { opacity: 0, y: 18 }, show: { opacity: 1, y: 0, transiti
 export function PageShell({ eyebrow, title, description, width = 'max-w-3xl', children }) {
   useSeo({ title, description })
   return (
-    <div className="py-14 lg:py-20">
+    <div className="py-10 sm:py-14 lg:py-20">
       <div className={`container-x ${width}`}>
         <motion.header className="mb-10 lg:mb-14" initial="hidden" animate="show" variants={{ show: { transition: { staggerChildren: 0.07, delayChildren: 0.1 } } }}>
           {eyebrow && <motion.div variants={item}><Eyebrow>{eyebrow}</Eyebrow></motion.div>}

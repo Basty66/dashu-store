@@ -2,9 +2,8 @@ import { useMemo, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ShoppingBag, Zap, TrendingDown, Store } from 'lucide-react'
 import { formatCLP, packSavings, packUnitPrice, sortPacks, nextPackUpsell, packLabelLong } from '@shared/pricing.js'
-import { HIGHLIGHT_PACK_UNITS, DISTRIBUTOR } from '@shared/store.js'
 import { useCart } from '../../store/cart'
-import { toast } from '../../store/toast'
+import { useConfig } from '../../store/storeConfig'
 import { Button } from '../atoms/Button'
 import { PackOption } from '../molecules/PackOption'
 import { QuantityStepper } from '../molecules/QuantityStepper'
@@ -13,11 +12,13 @@ import { QuantityStepper } from '../molecules/QuantityStepper'
 export function BuyBox({ product }) {
   const navigate = useNavigate()
   const add = useCart((s) => s.add)
+  const highlightUnits = useConfig((c) => c.highlightPackUnits)
+  const distributorCost = useConfig((c) => c.distributor.unitCost)
   const inCart = useCart((s) => s.items.filter((i) => i.productId === product.id).reduce((n, i) => n + i.packUnits * i.quantity, 0))
   const packs = useMemo(() => sortPacks(product.packs), [product.packs])
   const available = Math.max(0, product.stock - inCart)
 
-  const defaultPack = packs.find((p) => p.units === HIGHLIGHT_PACK_UNITS && p.units <= available) || packs.find((p) => p.units <= available) || packs[0]
+  const defaultPack = packs.find((p) => p.units === highlightUnits && p.units <= available) || packs.find((p) => p.units <= available) || packs[0]
   const [units, setUnits] = useState(defaultPack?.units)
   const [quantity, setQuantity] = useState(1)
 
@@ -41,16 +42,15 @@ export function BuyBox({ product }) {
       quantity: qty,
     })
     setQuantity(1)
+    // Al agregar se abre el carrito; "Comprar ya" salta directo al checkout.
     if (goToCheckout) {
       useCart.getState().close()
       navigate('/checkout')
-    } else {
-      toast(`Agregaste ${qty} × ${packLabelLong(pack.units)}`, 'success')
     }
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div id="caja-compra" className="flex flex-col gap-6">
       <fieldset>
         <legend className="mb-3 flex w-full items-baseline justify-between text-sm font-medium">
           Elige tu formato
@@ -63,7 +63,7 @@ export function BuyBox({ product }) {
               pack={p}
               savings={packSavings(p, packs)}
               selected={p.units === pack.units}
-              highlight={p.units === HIGHLIGHT_PACK_UNITS}
+              highlight={p.units === highlightUnits}
               disabled={p.units > available}
               onSelect={() => {
                 setUnits(p.units)
@@ -118,7 +118,7 @@ export function BuyBox({ product }) {
         )}
         {' · '}
         <Link to="/distribuidores" className="inline-flex items-center gap-1 font-medium text-ink underline decoration-gold underline-offset-4 hover:text-gold-deep">
-          <Store size={14} aria-hidden="true" /> ¿Revendes? Distribuidores desde {formatCLP(DISTRIBUTOR.unitCost)} c/u
+          <Store size={14} aria-hidden="true" /> ¿Revendes? Distribuidores desde {formatCLP(distributorCost)} c/u
         </Link>
       </p>
     </div>

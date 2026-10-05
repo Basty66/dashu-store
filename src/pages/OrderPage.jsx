@@ -3,7 +3,7 @@ import { useParams, useSearchParams } from 'react-router-dom'
 import { Clock, RefreshCw, CreditCard, Copy, MessageCircle, CheckCircle2, XCircle } from 'lucide-react'
 import { formatCLP, packLabelLong } from '@shared/pricing.js'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { toast } from '../store/toast'
 import { useCart } from '../store/cart'
 import { useSeo } from '../hooks/useSeo'
@@ -12,6 +12,7 @@ import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState, StatusBadge } from '../components/molecules/Feedback'
 import { PriceRows } from '../components/molecules/PriceRows'
 import { OrderTimeline } from '../components/organisms/OrderTimeline'
+import { ThankYouCard } from '../components/organisms/ThankYouCard'
 
 function useCountdown(until) {
   const [now, setNow] = useState(() => Date.now())
@@ -49,6 +50,7 @@ function Headline({ order }) {
 }
 
 export default function OrderPage() {
+  const waNumber = useWhatsappNumber()
   const { orderNumber } = useParams()
   const [params, setParams] = useSearchParams()
   const token = params.get('t')
@@ -125,7 +127,7 @@ export default function OrderPage() {
     return <div className="container-x space-y-6 py-14"><Skeleton className="h-16 w-2/3" /><Skeleton className="h-80 w-full rounded-4xl" /></div>
   }
 
-  const wa = whatsappLink(`Hola, tengo una consulta sobre mi pedido ${order.orderNumber}`)
+  const wa = whatsappLink(waNumber, `Hola, tengo una consulta sobre mi pedido ${order.orderNumber}`)
   const rejected = order.status === 'PENDIENTE_PAGO' && ['rejected', 'cancelled'].includes(order.paymentStatus)
 
   return (
@@ -138,6 +140,11 @@ export default function OrderPage() {
 
       <div className="grid gap-8 lg:grid-cols-12">
         <div className="space-y-6 lg:col-span-7">
+          {order.status === 'PAGADO' && (
+            <div className="pb-2 pt-2 sm:pb-4">
+              <ThankYouCard name={order.customerName.split(' ')[0]} code={order.orderNumber} />
+            </div>
+          )}
           <div className="rounded-4xl border border-sand bg-paper p-6 sm:p-8">
             <Headline order={order} />
             {order.status === 'PENDIENTE_PAGO' && (

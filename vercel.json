@@ -18,12 +18,36 @@
       "destination": "/api/webhooks/[...slug]"
     },
     {
-      "source": "/api/products/:path*",
-      "destination": "/api/products"
-    },
-    {
       "source": "/api/seminars/:path*",
       "destination": "/api/seminars"
+    },
+    {
+      "source": "/api/products/:path*",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/images/:path*",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/contact",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/reviews",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/distributors",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/public"
+    },
+    {
+      "source": "/api/settings",
+      "destination": "/api/public"
     },
     {
       "source": "/((?!api/).*)",
@@ -52,7 +76,7 @@
         },
         {
           "key": "Content-Security-Policy",
-          "value": "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.mercadopago.cl https://*.mercadopago.com"
+          "value": "default-src 'self'; img-src 'self' data: blob: https:; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; script-src 'self'; connect-src 'self'; frame-src https://www.instagram.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self' https://*.mercadopago.cl https://*.mercadopago.com"
         }
       ]
     },

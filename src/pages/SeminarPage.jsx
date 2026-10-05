@@ -11,6 +11,8 @@ import { Skeleton } from '../components/atoms/Misc'
 import { ErrorState } from '../components/molecules/Feedback'
 import { DateBlock, SeatsBar } from '../components/molecules/SeminarBits'
 import { EnrollForm } from '../components/organisms/EnrollForm'
+import { MobileStickyBar } from '../components/organisms/MobileStickyBar'
+import { scrollToTarget } from '../lib/smoothScroll'
 
 export default function SeminarPage() {
   const { slug } = useParams()
@@ -39,8 +41,8 @@ export default function SeminarPage() {
 
   return (
     <div className="container-x py-10 lg:py-14">
-      <nav aria-label="Migas de pan" className="mb-8 flex items-center gap-1.5 text-sm text-muted">
-        <Link to="/capacitaciones" className="hover:text-ink">Capacitaciones</Link>
+      <nav aria-label="Migas de pan" className="mb-4 flex items-center gap-1.5 sm:mb-8 text-sm text-muted">
+        <Link to="/capacitaciones" className="py-2 hover:text-ink">Capacitaciones</Link>
         <ChevronRight size={14} aria-hidden="true" />
         <span className="text-ink" aria-current="page">{s.city}</span>
       </nav>
@@ -81,7 +83,7 @@ export default function SeminarPage() {
         </div>
 
         <aside className="lg:col-span-5">
-          <div className="rounded-4xl border border-sand bg-paper p-6 shadow-card sm:p-8 lg:sticky lg:top-24">
+          <div id="inscripcion" className="rounded-3xl border border-sand bg-paper p-5 shadow-card sm:rounded-4xl sm:p-8 lg:sticky lg:top-24">
             <p className="eyebrow text-gold-deep">{s.price === null ? 'Pre-inscripción' : 'Inscripción'}</p>
             <p className="mt-2 font-display text-3xl font-bold tabular">{s.price === null ? 'Valor por confirmar' : formatCLP(s.price)}</p>
             <div className="mt-4"><SeatsBar seminar={s} /></div>
@@ -96,6 +98,19 @@ export default function SeminarPage() {
           </div>
         </aside>
       </div>
+
+      {/* Celular: el formulario está al final; esta barra lleva directo a él. */}
+      {!closed && (
+        <MobileStickyBar targetId="inscripcion" mode="before">
+          <div className="min-w-0 flex-1 leading-tight">
+            <p className="truncate text-sm font-medium">{s.title} · {s.city}</p>
+            <p className="text-xs text-muted tabular">{s.price === null ? 'Pre-inscripción sin costo' : formatCLP(s.price)}</p>
+          </div>
+          <Button className="flex-none" onClick={() => scrollToTarget(document.getElementById('inscripcion'))}>
+            {s.price === null ? 'Pre-inscribirme' : 'Inscribirme'}
+          </Button>
+        </MobileStickyBar>
+      )}
     </div>
   )
 }

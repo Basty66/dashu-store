@@ -31,11 +31,13 @@ export default function Products() {
                   <div className="flex flex-wrap items-center gap-2">
                     <p className="font-display text-lg font-bold">{p.title}</p>
                     {!p.isActive && <Badge tone="warning">Oculto</Badge>}
+                    {p.packs.some((pack) => pack.onSale) && <Badge tone="sale">Oferta activa</Badge>}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     {sortPacks(p.packs).map((pack) => (
                       <span key={pack.units} className={`rounded-full border px-3 py-1 font-mono text-xs ${pack.isActive ? 'border-sand-300' : 'border-dashed border-sand-300 text-muted line-through'}`}>
                         {packLabel(pack.units)} · {formatCLP(pack.price)}{pack.units > 1 ? ` (${formatCLP(packUnitPrice(pack))} c/u)` : ''}
+                        {pack.onSale && <span className="ml-1 text-danger">→ {formatCLP(pack.salePrice)}</span>}
                       </span>
                     ))}
                   </div>

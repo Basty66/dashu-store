@@ -34,12 +34,16 @@ model Product {
 
 // Formato de venta: unidad suelta (units = 1) o pack de N unidades.
 model Pack {
-  id        Int     @id @default(autoincrement())
-  productId Int
-  units     Int
-  price     Int // precio total del pack
-  isActive  Boolean @default(true)
-  product   Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  id           Int       @id @default(autoincrement())
+  productId    Int
+  units        Int
+  price        Int // precio total del pack (precio normal)
+  isActive     Boolean   @default(true)
+  // Oferta: precio rebajado con fechas opcionales (sin fechas = vigente hasta quitarla).
+  salePrice    Int?
+  saleStartsAt DateTime?
+  saleEndsAt   DateTime?
+  product      Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
 
   @@unique([productId, units])
 }
@@ -234,6 +238,24 @@ model DistributorLead {
 }
 
 // Configuración clave/valor (ej: conexión con Google Calendar).
+// Personas con acceso al panel. La clave se guarda con scrypt (lib/password.js), nunca en texto.
+model AdminUser {
+  id                 Int       @id @default(autoincrement())
+  email              String    @unique
+  name               String    @default("")
+  passwordHash       String
+  role               String    @default("admin") // owner | admin
+  isActive           Boolean   @default(true)
+  mustChangePassword Boolean   @default(false)
+  // Sube al cambiar la clave o desactivar la cuenta: invalida las sesiones abiertas.
+  sessionVersion     Int       @default(1)
+  failedLogins       Int       @default(0)
+  lockedUntil        DateTime?
+  lastLoginAt        DateTime?
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+}
+
 model Setting {
   key       String   @id
   value     String

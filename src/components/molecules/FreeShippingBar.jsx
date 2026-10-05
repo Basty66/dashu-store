@@ -1,11 +1,12 @@
 import { Truck } from 'lucide-react'
-import { FREE_SHIPPING_FROM } from '@shared/shipping.js'
 import { formatCLP } from '@shared/pricing.js'
+import { useConfig } from '../../store/storeConfig'
 
 export function FreeShippingBar({ subtotal }) {
-  if (FREE_SHIPPING_FROM === null) return null
-  const missing = Math.max(0, FREE_SHIPPING_FROM - subtotal)
-  const progress = Math.min(100, (subtotal / FREE_SHIPPING_FROM) * 100)
+  const freeFrom = useConfig((c) => c.shipping.freeFrom)
+  if (freeFrom === null) return null
+  const missing = Math.max(0, freeFrom - subtotal)
+  const progress = Math.min(100, (subtotal / freeFrom) * 100)
   return (
     <div className="rounded-2xl bg-bone p-4">
       <p className="flex items-center gap-2 text-sm">

@@ -1,23 +1,25 @@
 import { useMemo, useState } from 'react'
 import { Package, BadgePercent, Truck, GraduationCap, CheckCircle2, MessageCircle, Info } from 'lucide-react'
-import { DISTRIBUTOR, DISTRIBUTOR_MIN_UNITS, DISTRIBUTOR_MIN_TOTAL } from '@shared/store.js'
 import { REGION_NAMES } from '@shared/chile.js'
 import { distributorLeadSchema } from '@shared/seminars.js'
 import { fieldErrors } from '@shared/checkoutSchema.js'
 import { formatCLP } from '@shared/pricing.js'
 import { formatRut } from '@shared/rut.js'
 import { api } from '../lib/api'
-import { whatsappLink } from '../lib/contact'
+import { useWhatsappNumber, whatsappLink } from '../lib/contact'
 import { scrollToTarget } from '../lib/smoothScroll'
 import { useSeo } from '../hooks/useSeo'
+import { useDistributor } from '../store/storeConfig'
 import { Button } from '../components/atoms/Button'
 import { Input, Select, Textarea } from '../components/atoms/Input'
 import { Field } from '../components/molecules/Field'
+import { MobileStickyBar } from '../components/organisms/MobileStickyBar'
 
-const empty = { name: '', email: '', phone: '', business: '', rut: '', region: '', city: '', boxes: DISTRIBUTOR.minBoxes, message: '' }
-const requirement = `Para ser distribuidor debes pedir al menos ${DISTRIBUTOR.minBoxes} embalajes 📦 (cada embalaje trae ${DISTRIBUTOR.unitsPerBox} cremas DASHU) por un total de ${formatCLP(DISTRIBUTOR_MIN_TOTAL)}. Cada crema te queda a ${formatCLP(DISTRIBUTOR.unitCost)}.`
+const empty = { name: '', email: '', phone: '', business: '', rut: '', region: '', city: '', boxes: 3, message: '' }
 
-function Requirement({ className = '' }) {
+// Requisito del programa (montos desde Admin → Ajustes).
+function Requirement({ distributor, className = '' }) {
+  const requirement = `Para ser distribuidor debes pedir al menos ${distributor.minBoxes} embalajes 📦 (cada embalaje trae ${distributor.unitsPerBox} cremas DASHU) por un total de ${formatCLP(distributor.minTotal)}. Cada crema te queda a ${formatCLP(distributor.unitCost)}.`
   return (
     <div className={`flex gap-3 rounded-3xl bg-blush p-5 text-sm leading-relaxed ${className}`} role="note">
       <Info size={18} className="mt-0.5 flex-none text-gold-deep" aria-hidden="true" />
@@ -27,8 +29,10 @@ function Requirement({ className = '' }) {
 }
 
 export default function Distributors() {
-  useSeo({ title: 'Distribuidores', description: `Vende DASHU Down Permanent en tu negocio: ${DISTRIBUTOR.minBoxes} embalajes de ${DISTRIBUTOR.unitsPerBox} cremas a ${formatCLP(DISTRIBUTOR.unitCost)} c/u.` })
-  const [form, setForm] = useState(empty)
+  const distributor = useDistributor()
+  const waNumber = useWhatsappNumber()
+  useSeo({ title: 'Distribuidores', description: `Vende DASHU Down Permanent en tu negocio: ${distributor.minBoxes} embalajes de ${distributor.unitsPerBox} cremas a ${formatCLP(distributor.unitCost)} c/u.` })
+  const [form, setForm] = useState(() => ({ ...empty, boxes: distributor.minBoxes }))
   const [errors, setErrors] = useState({})
   const [state, setState] = useState({ sending: false, done: null, error: '' })
   const set = (k) => (e) => {
@@ -36,15 +40,15 @@ export default function Distributors() {
     if (errors[k]) setErrors((x) => ({ ...x, [k]: undefined }))
   }
   const boxes = Math.max(1, Number(form.boxes) || 0)
-  const total = boxes * DISTRIBUTOR.unitsPerBox * DISTRIBUTOR.unitCost
-  const underMin = boxes < DISTRIBUTOR.minBoxes
+  const total = boxes * distributor.unitsPerBox * distributor.unitCost
+  const underMin = boxes < distributor.minBoxes
 
   const benefits = useMemo(() => [
-    { icon: BadgePercent, title: `${formatCLP(DISTRIBUTOR.unitCost)} por crema`, text: 'El mejor precio, comprando embalajes cerrados.' },
-    { icon: Package, title: `${DISTRIBUTOR.unitsPerBox} cremas por embalaje`, text: `Pedido mínimo: ${DISTRIBUTOR.minBoxes} embalajes (${DISTRIBUTOR_MIN_UNITS} cremas).` },
+    { icon: BadgePercent, title: `${formatCLP(distributor.unitCost)} por crema`, text: 'El mejor precio, comprando embalajes cerrados.' },
+    { icon: Package, title: `${distributor.unitsPerBox} cremas por embalaje`, text: `Pedido mínimo: ${distributor.minBoxes} embalajes (${distributor.minUnits} cremas).` },
     { icon: Truck, title: 'Despacho a todo Chile', text: 'Con número de seguimiento del courier.' },
     { icon: GraduationCap, title: 'Capacitación', text: 'Accede a seminarios y clases prácticas de la técnica.' },
-  ], [])
+  ], [distributor])
 
   async function submit(e) {
     e.preventDefault()
@@ -68,16 +72,16 @@ export default function Distributors() {
 
   if (state.done) {
     const d = state.done
-    const wa = whatsappLink(`Hola, soy ${d.name} de ${d.business} (${d.city}). Postulé como distribuidor DASHU y quiero pedir ${d.boxes} embalajes.`)
+    const wa = whatsappLink(waNumber, `Hola, soy ${d.name} de ${d.business} (${d.city}). Postulé como distribuidor DASHU y quiero pedir ${d.boxes} embalajes.`)
     return (
       <div className="container-x max-w-3xl py-16 lg:py-24">
         <div className="rounded-4xl border border-sand bg-paper p-8 sm:p-10">
           <CheckCircle2 size={40} strokeWidth={1.6} className="text-success" aria-hidden="true" />
           <h1 className="display-md mt-4">¡Recibimos tu solicitud, {d.name.split(' ')[0]}!</h1>
           <p className="mt-3 text-muted">Te enviamos una copia a <strong className="text-ink">{d.email}</strong> y te contactaremos para coordinar tu primer pedido.</p>
-          <Requirement className="mt-6" />
+          <Requirement distributor={distributor} className="mt-6" />
           <p className="mt-6 text-sm">
-            Tu pedido estimado: <strong>{d.boxes} embalajes</strong> · {Number(d.boxes) * DISTRIBUTOR.unitsPerBox} cremas · <strong className="tabular">{formatCLP(Number(d.boxes) * DISTRIBUTOR.unitsPerBox * DISTRIBUTOR.unitCost)}</strong>
+            Tu pedido estimado: <strong>{d.boxes} embalajes</strong> · {Number(d.boxes) * distributor.unitsPerBox} cremas · <strong className="tabular">{formatCLP(Number(d.boxes) * distributor.unitsPerBox * distributor.unitCost)}</strong>
           </p>
           <div className="mt-8 flex flex-wrap gap-3">
             {wa && <Button href={wa} target="_blank" rel="noopener noreferrer"><MessageCircle size={16} aria-hidden="true" /> Adelantar por WhatsApp</Button>}
@@ -100,8 +104,8 @@ export default function Distributors() {
           </div>
           <div className="rounded-4xl bg-paper p-6 text-ink lg:col-span-5">
             <p className="eyebrow text-gold-deep">Pedido mínimo</p>
-            <p className="mt-2 font-display text-4xl font-black tabular">{formatCLP(DISTRIBUTOR_MIN_TOTAL)}</p>
-            <p className="mt-1 text-sm text-muted">{DISTRIBUTOR.minBoxes} embalajes × {DISTRIBUTOR.unitsPerBox} cremas = {DISTRIBUTOR_MIN_UNITS} cremas a {formatCLP(DISTRIBUTOR.unitCost)} c/u</p>
+            <p className="mt-2 font-display text-4xl font-black tabular">{formatCLP(distributor.minTotal)}</p>
+            <p className="mt-1 text-sm text-muted">{distributor.minBoxes} embalajes × {distributor.unitsPerBox} cremas = {distributor.minUnits} cremas a {formatCLP(distributor.unitCost)} c/u</p>
           </div>
         </div>
       </section>
@@ -123,9 +127,9 @@ export default function Distributors() {
           <div className="lg:col-span-4">
             <h2 className="display-md">Postula como distribuidor</h2>
             <p className="mt-3 text-muted">Completa tus datos y te contactamos para coordinar el pedido, el pago y el despacho.</p>
-            <Requirement className="mt-6" />
+            <Requirement distributor={distributor} className="mt-6" />
           </div>
-          <form onSubmit={submit} noValidate className="grid gap-5 rounded-4xl border border-sand bg-paper p-6 sm:grid-cols-2 sm:p-8 lg:col-span-8">
+          <form id="postular" onSubmit={submit} noValidate className="grid gap-5 rounded-3xl border border-sand bg-paper p-5 sm:grid-cols-2 sm:rounded-4xl sm:p-8 lg:col-span-8">
             <Field label="Nombre y apellido" error={errors.name}><Input name="lead-name" value={form.name} onChange={set('name')} autoComplete="name" /></Field>
             <Field label="Barbería o negocio" error={errors.business}><Input name="lead-business" value={form.business} onChange={set('business')} autoComplete="organization" /></Field>
             <Field label="Email" error={errors.email}><Input name="lead-email" type="email" value={form.email} onChange={set('email')} autoComplete="email" /></Field>
@@ -140,20 +144,29 @@ export default function Distributors() {
             <Field label="RUT (para factura)" optional error={errors.rut}>
               <Input name="lead-rut" value={form.rut} onChange={set('rut')} onBlur={() => form.rut && setForm((f) => ({ ...f, rut: formatRut(f.rut) }))} />
             </Field>
-            <Field label="¿Cuántos embalajes quieres?" error={errors.boxes} hint={`${boxes * DISTRIBUTOR.unitsPerBox} cremas · ${formatCLP(total)}`}>
+            <Field label="¿Cuántos embalajes quieres?" error={errors.boxes} hint={`${boxes * distributor.unitsPerBox} cremas · ${formatCLP(total)}`}>
               <Input name="lead-boxes" type="number" min={1} max={100} value={form.boxes} onChange={set('boxes')} />
             </Field>
             {underMin && (
               <p className="rounded-2xl bg-warning/10 p-4 text-sm text-warning sm:col-span-2" role="alert">
-                El mínimo para ser distribuidor es de {DISTRIBUTOR.minBoxes} embalajes. Puedes enviar la solicitud igual y te orientamos, o comprar packs en la tienda.
+                El mínimo para ser distribuidor es de {distributor.minBoxes} embalajes. Puedes enviar la solicitud igual y te orientamos, o comprar packs en la tienda.
               </p>
             )}
             <Field label="Mensaje" optional className="sm:col-span-2"><Textarea name="lead-message" value={form.message} onChange={set('message')} maxLength={1000} placeholder="Cuéntanos de tu negocio y dónde venderías" /></Field>
             {state.error && <p className="text-sm text-danger sm:col-span-2" role="alert">{state.error}</p>}
-            <div className="sm:col-span-2"><Button type="submit" size="lg" loading={state.sending}>Enviar solicitud</Button></div>
+            <div className="sm:col-span-2"><Button type="submit" size="lg" loading={state.sending} className="w-full sm:w-auto">Enviar solicitud</Button></div>
           </form>
         </div>
       </section>
+
+      {/* Celular: acceso directo al formulario de postulación. */}
+      <MobileStickyBar targetId="postular" mode="before">
+        <div className="min-w-0 flex-1 leading-tight">
+          <p className="text-sm font-medium">Programa de distribuidores</p>
+          <p className="text-xs text-muted tabular">{formatCLP(distributor.unitCost)} por crema</p>
+        </div>
+        <Button className="flex-none" onClick={() => scrollToTarget(document.getElementById('postular'))}>Postular</Button>
+      </MobileStickyBar>
     </>
   )
 }

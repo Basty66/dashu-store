@@ -30,7 +30,7 @@ export function ProductGallery({ images, title }) {
   return (
     <div className="flex flex-col gap-3">
       <div
-        className="group relative aspect-square overflow-hidden rounded-4xl bg-navy"
+        className="sheen group relative aspect-square overflow-hidden rounded-4xl bg-navy"
         onMouseMove={(e) => {
           const r = e.currentTarget.getBoundingClientRect()
           setZoom({ x: ((e.clientX - r.left) / r.width) * 100, y: ((e.clientY - r.top) / r.height) * 100 })

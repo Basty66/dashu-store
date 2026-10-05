@@ -1,9 +1,13 @@
 import { STORE } from '@shared/store.js'
+import { formatCLP, lowestUnitPrice } from '@shared/pricing.js'
+import { scrollToTarget } from '../../lib/smoothScroll'
+import { Button } from '../atoms/Button'
 import { Badge } from '../atoms/Badge'
 import { AccordionItem } from '../molecules/Accordion'
 import { TrustBadges } from '../molecules/TrustBadges'
 import { ProductGallery } from './ProductGallery'
 import { BuyBox } from './BuyBox'
+import { MobileStickyBar } from './MobileStickyBar'
 
 // Galería + información + caja de compra. Se usa en el inicio y en la ficha del producto.
 export function ProductShowcase({ product, headingLevel = 'h2' }) {
@@ -54,5 +58,23 @@ export function ProductShowcase({ product, headingLevel = 'h2' }) {
         </div>
       </div>
     </div>
+  )
+}
+
+// Barra fija de compra en celular: aparece al pasar la caja de compra y lleva de vuelta al selector.
+export function ProductBuyBar({ product }) {
+  return (
+    <MobileStickyBar targetId="caja-compra" mode="after">
+      <div className="h-11 w-11 flex-none overflow-hidden rounded-xl bg-navy">
+        {product.images[0] && <img src={product.images[0]} alt="" className="h-full w-full object-cover" />}
+      </div>
+      <div className="min-w-0 flex-1 leading-tight">
+        <p className="truncate text-sm font-medium">{product.brand} {product.title}</p>
+        <p className="text-xs text-muted tabular">Desde {formatCLP(lowestUnitPrice(product.packs))} c/u</p>
+      </div>
+      <Button onClick={() => scrollToTarget(document.getElementById('caja-compra'))} className="flex-none">
+        Comprar
+      </Button>
+    </MobileStickyBar>
   )
 }

@@ -41,6 +41,14 @@ export function StoreLayout() {
   const last = useRef({ key: location.key, path: location.pathname })
   const restoreTo = useRef(null)
   const transitioning = useRef(false)
+  // La página con que se abre el sitio no hace el fundido de entrada. Se evita en el
+  // envoltorio y no con <AnimatePresence initial={false}>, porque eso además apagaba
+  // las animaciones de entrada de todo lo que aparece después dentro de esa página.
+  const landing = useRef(location.pathname)
+
+  useEffect(() => {
+    if (location.pathname !== landing.current) landing.current = null
+  }, [location.pathname])
 
   useEffect(() => {
     initSmoothScroll()
@@ -105,8 +113,8 @@ export function StoreLayout() {
       <AnnouncementBar />
       <Header overlay={location.pathname === '/'} />
       <main id="contenido" className="flex-1">
-        <AnimatePresence mode="wait" initial={false} onExitComplete={() => scrollToTarget(0, { immediate: true })}>
-          <motion.div key={location.pathname} variants={page} initial="initial" animate="enter" exit="exit" onAnimationStart={(v) => v === 'enter' && afterEnter()}>
+        <AnimatePresence mode="wait" onExitComplete={() => scrollToTarget(0, { immediate: true })}>
+          <motion.div key={location.pathname} variants={page} initial={location.pathname === landing.current ? false : 'initial'} animate="enter" exit="exit" onAnimationStart={(v) => v === 'enter' && afterEnter()}>
             <FrozenOutlet />
           </motion.div>
         </AnimatePresence>

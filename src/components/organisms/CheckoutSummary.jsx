@@ -24,7 +24,7 @@ function CouponBox({ applied, error, onApply, onRemove, busy }) {
         if (code.trim()) onApply(code.trim().toUpperCase())
       }}
     >
-      <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Código de descuento" aria-label="Código de descuento" className="h-11 uppercase" invalid={Boolean(error)} />
+      <Input value={code} onChange={(e) => setCode(e.target.value.toUpperCase())} placeholder="Cupón de descuento" aria-label="Cupón de descuento" className="h-11 uppercase" invalid={Boolean(error)} />
       <Button type="submit" variant="secondary" className="h-11 flex-none" loading={busy} disabled={!code.trim()}>Aplicar</Button>
     </form>
   )
