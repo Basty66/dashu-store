@@ -10,22 +10,31 @@ const ease = [0.16, 1, 0.3, 1]
 function Portrait() {
   const initials = FOUNDER.name.split(' ').map((w) => w[0]).join('')
   return (
-    // Con foto: vertical 4:5 con el nombre sobre un degradado. Sin foto: monograma (apaisado en celular).
-    <div className={`grain relative overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl ${FOUNDER.photo ? 'aspect-[4/5]' : 'aspect-[16/11]'}`}>
+    // Con foto: vertical 4:5 con el nombre sobre un degradado, con tamaño contenido en todo dispositivo
+    // (ancho según pantalla y nunca más alto que ~55–65% del alto visible). Sin foto: monograma.
+    <div
+      className={`relative overflow-hidden rounded-3xl bg-ink sm:aspect-[4/5] sm:rounded-4xl ${
+        FOUNDER.photo
+          ? 'sheen mx-auto aspect-[4/5] w-full max-w-[min(280px,calc(55svh*0.8))] sm:max-w-[min(340px,calc(60svh*0.8))] lg:max-w-[min(400px,calc(65svh*0.8))]'
+          : 'grain aspect-[16/11]'
+      }`}
+      style={{ containerType: 'inline-size', '--sheen-delay': '2.5s' }}
+    >
       {FOUNDER.photo ? (
         <>
           <img
             src={FOUNDER.photo}
             srcSet={`${FOUNDER.photo.replace(/\.webp$/, '-600.webp')} 600w, ${FOUNDER.photo} 1100w`}
-            sizes="(min-width: 1024px) 40vw, 100vw"
+            sizes="(min-width: 1024px) 400px, 340px"
             alt={`${FOUNDER.name}, ${FOUNDER.role}`}
             className="h-full w-full object-cover object-top"
             loading="lazy"
           />
           <div aria-hidden="true" className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-ink/85 via-ink/30 to-transparent" />
-          <div className="absolute inset-x-0 bottom-0 p-5 text-paper sm:p-7">
-            <p className="font-display text-xl font-bold sm:text-2xl">{FOUNDER.name}</p>
-            <p className="text-sm text-paper/75">{FOUNDER.role}</p>
+          {/* Texto proporcional al ancho de la tarjeta (unidades cqw), para que no tape la cara en tarjetas chicas. */}
+          <div className="absolute inset-x-0 bottom-0 text-paper" style={{ padding: 'clamp(0.75rem, 7cqw, 1.75rem)' }}>
+            <p className="font-display font-bold leading-tight" style={{ fontSize: 'clamp(0.95rem, 7.5cqw, 1.5rem)' }}>{FOUNDER.name}</p>
+            <p className="leading-snug text-paper/75" style={{ fontSize: 'clamp(0.68rem, 4.2cqw, 0.875rem)' }}>{FOUNDER.role}</p>
           </div>
         </>
       ) : (

@@ -11,7 +11,7 @@ export function ProductCard({ product }) {
   return (
     <Link to={`/producto/${product.slug}`} className="group flex flex-col overflow-hidden rounded-4xl border border-sand bg-white transition-all duration-300 ease-out hover:-translate-y-1 hover:shadow-lift">
       <div className="relative">
-        <Img src={product.images[0]} alt={product.title} ratio="4 / 5" className="bg-navy" imgClassName="transition-transform duration-700 ease-out group-hover:scale-105" />
+        <Img src={product.images[0]} alt={product.title} ratio="4 / 5" className="sheen bg-navy" imgClassName="transition-transform duration-700 ease-out group-hover:scale-105" />
         <div className="absolute left-4 top-4 flex gap-2">
           <Badge tone="light">{product.brand}</Badge>
           {soldOut && <Badge tone="danger">Agotado</Badge>}
